@@ -1,4 +1,4 @@
-const VERSION = "budget-v2";
+const VERSION = "budget-v3";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./app.js", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"
@@ -17,9 +17,9 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  if (!e.request.url.startsWith(self.location.origin)) return;
+  if (!e.request.url.startsWith(self.registration.scope)) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-cache" })
       .then(rep => {
         if (rep.ok) {
           const copie = rep.clone();
@@ -27,6 +27,6 @@ self.addEventListener("fetch", (e) => {
         }
         return rep;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(e.request).then(rep => rep || Response.error()))
   );
 });
