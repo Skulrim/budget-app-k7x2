@@ -1,4 +1,4 @@
-const VERSION = "budget-v1";
+const VERSION = "budget-v2";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./app.js", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"
@@ -17,6 +17,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     fetch(e.request)
       .then(rep => {
