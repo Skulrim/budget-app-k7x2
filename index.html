@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mon budget</title>
+  <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#4f7cff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Budget">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="entete">
+    <h1>Mon budget</h1>
+    <button id="bouton-reglages" type="button" aria-label="Réglages">⚙</button>
+  </header>
+
+  <main>
+    <section id="vue-accueil" class="vue">
+      <section id="carte-patrimoine" class="patrimoine"></section>
+      <section id="carte-reste" class="hero"></section>
+      <section id="carte-series" class="patrimoine"></section>
+      <section id="carte-bilan" class="patrimoine"></section>
+      <h2>Mes comptes</h2>
+      <section id="liste-comptes"></section>
+      <h2>Badges</h2>
+<section id="liste-badges" class="badges"></section>
+    </section>
+
+    <section id="vue-perso" class="vue" hidden>
+      <h2>Mes comptes courants</h2>
+      <section id="liste-comptes-perso"></section>
+      <h2>Budgets du mois</h2>
+      <section id="liste-budgets-perso"></section>
+      <h2>Dernières opérations</h2>
+      <section id="liste-operations-perso"></section>
+    </section>
+
+    <section id="vue-commun" class="vue" hidden>
+      <h2>Compte commun</h2>
+      <section id="liste-comptes-commun"></section>
+      <h2>Budgets du mois</h2>
+      <section id="liste-budgets-commun"></section>
+      <h2>Dernières opérations</h2>
+      <section id="liste-operations-commun"></section>
+    </section>
+
+    <section id="vue-livrets" class="vue" hidden>
+      <h2>Livrets</h2>
+      <section id="liste-livrets"></section>
+      <h2>Matelas de sécurité</h2>
+<div class="saisie">
+  <select id="choix-mois-matelas">
+    <option value="3">Objectif : 3 mois de dépenses</option>
+    <option value="4">Objectif : 4 mois de dépenses</option>
+    <option value="5">Objectif : 5 mois de dépenses</option>
+    <option value="6">Objectif : 6 mois de dépenses</option>
+  </select>
+</div>
+<section id="carte-matelas" class="patrimoine"></section>
+<h2>Objectifs d'achat</h2>
+<section id="liste-objectifs"></section>
+<p id="controle-objectifs"></p>
+<div class="saisie">
+  <select id="objectif-choix"></select>
+  <input id="objectif-ajout" type="text" inputmode="decimal" placeholder="Montant mis de côté (ex : 50)">
+  <button id="bouton-objectif-ajout" type="button">Mettre de côté</button>
+  <p id="message-objectif-ajout"></p>
+</div>
+<h2>Dernières mises de côté</h2>
+<section id="liste-mises"></section>
+<h2>Nouvel objectif</h2>
+<div class="saisie">
+  <input id="objectif-nom" type="text" maxlength="40" placeholder="Nom (ex : Voyage, Nouvel écran)">
+  <input id="objectif-cible" type="text" inputmode="decimal" placeholder="Montant à atteindre (ex : 800)">
+  <button id="bouton-objectif-creer" type="button">Créer l'objectif</button>
+  <p id="message-objectif"></p>
+</div>
+      <h2>Virement</h2>
+      <div class="saisie">
+        <select id="virement-depuis"></select>
+        <select id="virement-vers"></select>
+        <input id="virement-montant" type="text" inputmode="decimal" placeholder="Montant (ex : 200)">
+        <button id="bouton-virement" type="button">Virer</button>
+        <p id="message-virement"></p>
+      </div>
+      <h2>Derniers virements</h2>
+      <section id="liste-virements"></section>
+    </section>
+
+    <section id="vue-placements" class="vue" hidden>
+      <h2>PEA et assurance vie</h2>
+      <section id="liste-placements"></section>
+      <h2>Mettre à jour un placement</h2>
+      <div class="saisie">
+        <select id="valo-compte"></select>
+        <input id="valo-valeur" type="text" inputmode="decimal" placeholder="Valeur actuelle en € (ex : 11000)">
+        <button id="bouton-valo" type="button">Enregistrer la valeur</button>
+        <p id="message-valo"></p>
+      </div>
+      <h2>Historique des valorisations</h2>
+      <section id="liste-valorisations"></section>
+    </section>
+
+    <section id="vue-reglages" class="vue" hidden>
+      <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
+      <h2>Ajouter ou modifier un budget</h2>
+<div class="saisie">
+  <input id="budget-nom" type="text" maxlength="40" list="suggestions-budget"
+         placeholder="Nom du poste (ex : Courses Leclerc)">
+  <datalist id="suggestions-budget"></datalist>
+  <select id="budget-portee">
+    <option value="perso">Perso</option>
+    <option value="commun">Commun</option>
+  </select>
+  <input id="budget-montant" type="text" inputmode="decimal" placeholder="Montant par mois (ex : 250)">
+  <button id="bouton-budget" type="button">Enregistrer le budget</button>
+  <p id="message-budget"></p>
+</div>
+      <h2>Nouveau compte</h2>
+      <div class="saisie">
+        <input id="compte-nom" type="text" placeholder="Nom du compte (ex : Livret A)">
+        <select id="compte-type">
+          <option value="courant">Courant</option>
+          <option value="livret">Livret</option>
+          <option value="pea">PEA</option>
+          <option value="assurance-vie">Assurance vie</option>
+        </select>
+        <select id="compte-proprio">
+          <option value="perso">Perso</option>
+          <option value="commun">Commun</option>
+        </select>
+        <input id="compte-solde" type="text" inputmode="decimal" placeholder="Solde de départ (ex : 1200)">
+        <input id="compte-verse" type="text" inputmode="decimal" placeholder="Total déjà versé (ex : 10000)" hidden>
+        <button id="bouton-compte" type="button">Créer le compte</button>
+        <p id="message-compte"></p>
+      </div>
+      <h2>Gérer les comptes</h2>
+<section id="gestion-comptes"></section>
+<p id="message-gestion"></p>
+<h2>Comptes archivés</h2>
+<section id="comptes-archives"></section>
+      <h2>Sauvegarde</h2>
+      <div class="saisie">
+        <button id="bouton-export" type="button">Exporter une sauvegarde</button>
+        <input id="fichier-import" type="file" accept=".json,application/json">
+        <p id="message-sauvegarde"></p>
+      </div>
+    </section>
+  </main>
+
+  <button id="bouton-plus" type="button" aria-label="Ajouter une opération">+</button>
+
+  <div id="panneau-saisie" class="panneau" hidden>
+    <div class="panneau-contenu">
+      <h2>Nouvelle opération</h2>
+      <div class="saisie">
+        <input id="montant" type="text" inputmode="decimal" placeholder="Montant (ex : 62,30)">
+        <select id="choix-compte"></select>
+        <select id="choix-sens">
+          <option value="depense">Dépense</option>
+          <option value="revenu">Revenu</option>
+        </select>
+        <select id="choix-categorie"></select>
+        <button id="bouton-ajouter" type="button">Ajouter</button>
+        <p id="message"></p>
+      </div>
+      <button id="fermer-saisie" type="button" class="lien">Fermer</button>
+    </div>
+  </div>
+
+  <div id="panneau-bilan" class="panneau" hidden>
+  <div class="panneau-contenu">
+    <select id="choix-mois-bilan"></select>
+    <div id="contenu-bilan"></div>
+    <button id="bouton-export-bilan" type="button" class="lien-action">Exporter ma sauvegarde</button>
+    <button id="fermer-bilan" type="button" class="lien">Fermer</button>
+  </div>
+</div>
+  <div id="notif" hidden></div>
+  <nav class="barre">
+    <button type="button" data-vue="accueil" class="actif">Accueil</button>
+    <button type="button" data-vue="perso">Perso</button>
+    <button type="button" data-vue="commun">Commun</button>
+    <button type="button" data-vue="livrets">Livrets</button>
+    <button type="button" data-vue="placements">Placements</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
