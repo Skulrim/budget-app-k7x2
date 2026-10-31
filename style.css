@@ -23,7 +23,7 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0 auto;
   max-width: 480px;
-  padding: 16px 16px 96px;
+  padding: 16px 16px 120px;
   background: var(--fond);
   color: var(--texte);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -147,13 +147,14 @@ h2 {
   padding-bottom: env(safe-area-inset-bottom);
 }
 .barre button {
-  flex: 1; background: none; border: none; padding: 14px 4px;
+  flex: 1; background: none; border: none; padding: 8px 4px 10px;
   font-size: 12px; font-family: inherit; color: var(--discret);
+   display: flex; flex-direction: column; align-items: center; gap: 3px;
 }
 .barre button.actif { color: var(--accent); font-weight: 700; }
 #bouton-plus {
   position: fixed; right: max(16px, calc(50% - 224px));
-  bottom: calc(70px + env(safe-area-inset-bottom));
+   bottom: calc(80px + env(safe-area-inset-bottom));
   width: 52px; height: 52px; border-radius: 50%; border: none;
   background: var(--accent); color: #fff; font-size: 30px; cursor: pointer;
   box-shadow: 0 4px 12px rgba(79, 124, 255, 0.4);
@@ -189,3 +190,8 @@ h2 {
   margin-top: 16px; font-size: 13px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.06em; color: var(--discret);
 }
+.barre svg {
+  width: 24px; height: 24px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.anneau circle { transition: stroke-dasharray 0.8s ease; }

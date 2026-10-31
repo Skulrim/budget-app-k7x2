@@ -271,7 +271,7 @@ function afficherBudgets() {
                 aria-label="Retirer ce budget">✕</button></span>
           </div>
           <div class="jauge">
-            <div class="jauge-remplie ${alerte ? "alerte" : ""}" style="width:${pct}%"></div>
+            <div class="jauge-remplie ${alerte ? "alerte" : ""}" data-pct="${pct}" style="width:${pct}%"></div>
           </div>
           ${alerte ? `<small class="texte-alerte">${texte}</small>` : ""}
         </div>`;
@@ -298,8 +298,9 @@ function afficherReste() {
     <div class="anneau">
       <svg width="96" height="96" viewBox="0 0 96 96">
         <circle cx="48" cy="48" r="40" fill="none" stroke="#86a3ff" stroke-width="9"/>
-        <circle cx="48" cy="48" r="40" fill="none" stroke="#ffffff" stroke-width="9"
-          stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"/>
+         <circle cx="48" cy="48" r="40" fill="none" stroke="#ffffff" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
+          data-trait="${trait}" data-circ="${circonference}"/>
       </svg>
       <b>${Math.round(ratio * 100)} %</b>
     </div>
@@ -441,7 +442,7 @@ function afficherMatelas() {
     <div class="mu">Tes livrets, hors objectifs d'achat, couvrent</div>
     <div class="moyen">${couverts} mois de dépenses</div>
     <div class="ligne"><span>${centimesVersEuros(livrets)}</span><span>sur ${centimesVersEuros(cible)}</span></div>
-    <div class="jauge"><div class="jauge-remplie" style="width:${pct}%"></div></div>
+    <div class="jauge"><div class="jauge-remplie" data-pct="${pct}" style="width:${pct}%"></div></div>
     ${atteint
       ? `<div class="succes">✓ Objectif atteint</div>`
       : `<div class="mu">Il manque ${centimesVersEuros(cible - livrets)}</div>`}
@@ -483,7 +484,7 @@ function afficherObjectifs() {
             <button class="supprimer" data-objectif="${o.id}"
               aria-label="Supprimer l'objectif">✕</button></span>
         </div>
-        <div class="jauge"><div class="jauge-remplie" style="width:${pct}%"></div></div>
+        <div class="jauge"><div class="jauge-remplie" data-pct="${pct}" style="width:${pct}%"></div></div>
         ${ratio >= 1
           ? `<div class="succes">✓ Objectif atteint</div>`
           : `<small class="mu">Il manque ${centimesVersEuros(o.cible - mis)}</small>`}
@@ -1222,6 +1223,27 @@ document.getElementById("fermer-bilan").addEventListener("click", () => {
   document.getElementById("panneau-bilan").hidden = true;
 });
 document.getElementById("bouton-export-bilan").addEventListener("click", exporterSauvegarde);
+function animerJauges() {
+  const barres = document.querySelectorAll(".vue:not([hidden]) .jauge-remplie[data-pct]");
+  const cercles = document.querySelectorAll(".vue:not([hidden]) circle[data-trait]");
+  for (const b of barres) {
+    b.style.transition = "none";
+    b.style.width = "0%";
+  }
+  for (const c of cercles) {
+    c.style.transition = "none";
+    c.style.strokeDasharray = "0 " + c.dataset.circ;
+  }
+  void document.body.offsetWidth;
+  for (const b of barres) {
+    b.style.transition = "";
+    b.style.width = b.dataset.pct + "%";
+  }
+  for (const c of cercles) {
+    c.style.transition = "";
+    c.style.strokeDasharray = c.dataset.trait + " " + c.dataset.circ;
+  }
+}
 const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages"];
 let vuePrecedente = "accueil";
 
@@ -1233,6 +1255,7 @@ function afficherVue(nom) {
   for (const b of document.querySelectorAll(".barre button")) {
     b.classList.toggle("actif", b.dataset.vue === nom);
   }
+  animerJauges();
   window.scrollTo(0, 0);
 }
 

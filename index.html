@@ -189,13 +189,28 @@
   </div>
 </div>
   <div id="notif" hidden></div>
-  <nav class="barre">
-    <button type="button" data-vue="accueil" class="actif">Accueil</button>
-    <button type="button" data-vue="perso">Perso</button>
-    <button type="button" data-vue="commun">Commun</button>
-    <button type="button" data-vue="livrets">Livrets</button>
-    <button type="button" data-vue="placements">Placements</button>
-  </nav>
+ <nav class="barre">
+  <button type="button" data-vue="accueil" class="actif">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button type="button" data-vue="perso">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+    <span>Perso</span>
+  </button>
+  <button type="button" data-vue="commun">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
+    <span>Commun</span>
+  </button>
+  <button type="button" data-vue="livrets">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/></svg>
+    <span>Livrets</span>
+  </button>
+  <button type="button" data-vue="placements">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l16 0"/><path d="M4 15l4 -6l4 2l4 -5l4 4"/></svg>
+    <span>Placements</span>
+  </button>
+</nav>
 
   <script src="app.js"></script>
 </body>
