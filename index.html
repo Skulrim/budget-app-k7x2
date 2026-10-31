@@ -80,14 +80,6 @@
   <button id="bouton-objectif-creer" type="button">Créer l'objectif</button>
   <p id="message-objectif"></p>
 </div>
-      <h2>Virement</h2>
-      <div class="saisie">
-        <select id="virement-depuis"></select>
-        <select id="virement-vers"></select>
-        <input id="virement-montant" type="text" inputmode="decimal" placeholder="Montant (ex : 200)">
-        <button id="bouton-virement" type="button">Virer</button>
-        <p id="message-virement"></p>
-      </div>
       <h2>Derniers virements</h2>
       <section id="liste-virements"></section>
     </section>
@@ -155,23 +147,38 @@
 
   <button id="bouton-plus" type="button" aria-label="Ajouter une opération">+</button>
 
-  <div id="panneau-saisie" class="panneau" hidden>
-    <div class="panneau-contenu">
-      <h2>Nouvelle opération</h2>
-      <div class="saisie">
-        <input id="montant" type="text" inputmode="decimal" placeholder="Montant (ex : 62,30)">
-        <select id="choix-compte"></select>
-        <select id="choix-sens">
-          <option value="depense">Dépense</option>
-          <option value="revenu">Revenu</option>
-        </select>
-        <select id="choix-categorie"></select>
-        <button id="bouton-ajouter" type="button">Ajouter</button>
-        <p id="message"></p>
-      </div>
-      <button id="fermer-saisie" type="button" class="lien">Fermer</button>
+<div id="panneau-saisie" class="panneau" hidden>
+  <div class="panneau-contenu">
+    <div class="bascule">
+      <button type="button" id="onglet-operation" class="actif">Opération</button>
+      <button type="button" id="onglet-virement">Virement</button>
     </div>
+
+    <div id="formulaire-operation" class="saisie">
+      <input id="montant" type="text" inputmode="decimal" placeholder="Montant (ex : 62,30)">
+      <select id="choix-compte"></select>
+      <select id="choix-sens">
+        <option value="depense">Dépense</option>
+        <option value="revenu">Revenu</option>
+      </select>
+      <select id="choix-categorie"></select>
+      <button id="bouton-ajouter" type="button">Ajouter</button>
+      <p id="message"></p>
+    </div>
+
+    <div id="formulaire-virement" class="saisie" hidden>
+      <span class="mu">Depuis</span>
+      <select id="virement-depuis"></select>
+      <span class="mu">Vers</span>
+      <select id="virement-vers"></select>
+      <input id="virement-montant" type="text" inputmode="decimal" placeholder="Montant (ex : 200)">
+      <button id="bouton-virement" type="button">Virer</button>
+      <p id="message-virement"></p>
+    </div>
+
+    <button id="fermer-saisie" type="button" class="lien">Fermer</button>
   </div>
+</div>
 
   <div id="panneau-bilan" class="panneau" hidden>
   <div class="panneau-contenu">

@@ -178,3 +178,14 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+.bascule { display: flex; gap: 8px; margin-bottom: 4px; }
+.bascule button {
+  flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--bord);
+  background: var(--carte); color: var(--discret); font-size: 15px;
+  font-family: inherit; font-weight: 600; cursor: pointer;
+}
+.bascule button.actif { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ligne.groupe {
+  margin-top: 16px; font-size: 13px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--discret);
+}

@@ -146,8 +146,31 @@ function dessinerComptes(idZone, filtre) {
   }
 }
 
+const ORDRE_TYPES = ["livret", "pea", "assurance-vie", "courant"];
+
+function ordreType(type) {
+  const i = ORDRE_TYPES.indexOf(type);
+  return i === -1 ? 99 : i;
+}
+
+function dessinerComptesParType() {
+  const zone = document.getElementById("liste-comptes");
+  const types = [...new Set(comptesActifs().map(c => c.type))]
+    .sort((a, b) => ordreType(a) - ordreType(b));
+  let html = "";
+  types.forEach((type, i) => {
+    html += `
+      <div class="ligne groupe">
+        <span>${echapper(NOMS_TYPES[type] || type)}</span>
+        <strong>${centimesVersEuros(totalPar(c => c.type === type))}</strong>
+      </div>
+      <div id="groupe-${i}"></div>`;
+  });
+  zone.innerHTML = html;
+  types.forEach((type, i) => dessinerComptes("groupe-" + i, c => c.type === type));
+}
 function afficherComptes() {
-  dessinerComptes("liste-comptes", () => true);
+  dessinerComptesParType();
   dessinerComptes("liste-comptes-perso",
     c => c.type === "courant" && c.proprietaire !== "commun");
   dessinerComptes("liste-comptes-commun",
@@ -633,25 +656,11 @@ function afficherPatrimoine() {
   const estTreso = c => c.type === "courant";
   const epargne = totalPar(c => !estTreso(c));
   const treso = totalPar(estTreso);
-  const typesEpargne = [...new Set(
-    comptesActifs().filter(c => !estTreso(c)).map(c => c.type))];
-  let lignesEpargne = "";
-  for (const type of typesEpargne) {
-    lignesEpargne += ligneMontant(NOMS_TYPES[type] || type,
-      totalPar(c => c.type === type));
-  }
-  const lignesTreso =
-    ligneMontant("Perso", totalPar(c => estTreso(c) && c.proprietaire !== "commun")) +
-    ligneMontant("Commun", totalPar(c => estTreso(c) && c.proprietaire === "commun"));
   document.getElementById("carte-patrimoine").innerHTML = `
     <div class="mu">Épargne et placements</div>
     <div class="gros">${centimesVersEuros(epargne)}</div>
-    ${lignesEpargne}
-    <div class="mu">Trésorerie (comptes courants)</div>
-    <div class="moyen">${centimesVersEuros(treso)}</div>
-    ${lignesTreso}
-    <div class="mu">Total général</div>
-    ${ligneMontant("Épargne + trésorerie", epargne + treso)}`;
+    ${ligneMontant("Trésorerie (comptes courants)", treso)}
+    ${ligneMontant("Total général", epargne + treso)}`;
 }
 function ajouterVirement() {
   const montant = eurosVersCentimes(document.getElementById("virement-montant").value);
@@ -675,6 +684,7 @@ function ajouterVirement() {
     date: new Date().toLocaleDateString("sv-SE")
   });
   document.getElementById("virement-montant").value = "";
+  document.getElementById("panneau-saisie").hidden = true;
   sauvegarder();
   rafraichir();
 }
@@ -1226,17 +1236,28 @@ function afficherVue(nom) {
   window.scrollTo(0, 0);
 }
 
+function afficherFormulaire(nom) {
+  document.getElementById("formulaire-operation").hidden = (nom !== "operation");
+  document.getElementById("formulaire-virement").hidden = (nom !== "virement");
+  document.getElementById("onglet-operation").classList.toggle("actif", nom === "operation");
+  document.getElementById("onglet-virement").classList.toggle("actif", nom === "virement");
+}
+
 for (const b of document.querySelectorAll(".barre button")) {
   b.addEventListener("click", () => afficherVue(b.dataset.vue));
 }
 document.getElementById("bouton-reglages").addEventListener("click", () => afficherVue("reglages"));
 document.getElementById("fermer-reglages").addEventListener("click", () => afficherVue(vuePrecedente));
+
 document.getElementById("bouton-plus").addEventListener("click", () => {
+  afficherFormulaire("operation");
   document.getElementById("panneau-saisie").hidden = false;
 });
 document.getElementById("fermer-saisie").addEventListener("click", () => {
   document.getElementById("panneau-saisie").hidden = true;
 });
+document.getElementById("onglet-operation").addEventListener("click", () => afficherFormulaire("operation"));
+document.getElementById("onglet-virement").addEventListener("click", () => afficherFormulaire("virement"));
 charger();
 remplirChoixComptes();
 remplirChoixCategories();
