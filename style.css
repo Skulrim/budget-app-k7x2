@@ -23,7 +23,7 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0 auto;
   max-width: 480px;
-  padding: 16px 16px 120px;
+  padding: 16px 16px 170px;
   background: var(--fond);
   color: var(--texte);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -195,3 +195,20 @@ h2 {
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
 .anneau circle { transition: stroke-dasharray 0.8s ease; }
+.repliable {
+  background: var(--carte); border: 1px solid var(--bord);
+  border-radius: var(--rayon); padding: 4px 14px;
+}
+.repliable summary {
+  cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none;
+}
+.repliable summary::-webkit-details-marker { display: none; }
+.repliable summary::after { content: "▾"; float: right; color: var(--discret); }
+.repliable[open] summary::after { content: "▴"; }
+.repliable input[type="search"] {
+  width: 100%; min-height: 44px; padding: 10px 14px; font-size: 16px;
+  font-family: inherit; border-radius: 12px; border: 1px solid var(--bord);
+  background: var(--carte); color: var(--texte); margin-bottom: 8px;
+}
+.saisie input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
+.cliquable { cursor: pointer; }

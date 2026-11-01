@@ -31,6 +31,7 @@ const etat = {
   misesDeCote: [],
   badges: [],
   bilansVus: [],
+  plansEpargne: [],
   virements: [],
   valorisations: []
 };
@@ -192,6 +193,7 @@ function remplirChoixComptes() {
     }
   }
   remplirChoixPlacements();
+  remplirChoixPlan();
 }
 
 function remplirChoixPlacements() {
@@ -371,6 +373,40 @@ function enregistrerBudget() {
   rafraichir();
 }
 
+function trouverCategorieSimilaire(nom, sens, portee) {
+  const n = normaliser(nom);
+  if (n === "") return { exacte: null, proches: [] };
+  const memeSens = etat.categories.filter(c =>
+    c.sens === sens
+    && (c.portee === portee || c.portee === "tous" || portee === "tous"));
+  const exacte = memeSens.find(c => normaliser(c.nom) === n) || null;
+  const proches = memeSens
+    .filter(c => c !== exacte
+      && (normaliser(c.nom).includes(n) || n.includes(normaliser(c.nom))))
+    .slice(0, 3);
+  return { exacte, proches };
+}
+
+function verifierNouvelleCategorie() {
+  const nom = document.getElementById("categorie-nom").value;
+  const sens = document.getElementById("categorie-sens").value;
+  const portee = document.getElementById("categorie-portee").value;
+  const message = document.getElementById("message-categorie");
+  const { exacte, proches } = trouverCategorieSimilaire(nom, sens, portee);
+  if (exacte) {
+    message.textContent = "« " + exacte.nom + " » existe déjà.";
+  } else if (proches.length > 0) {
+    message.textContent = "Proche : " + proches.map(c => c.nom).join(", ")
+      + ". Vérifie que ce n'est pas la même.";
+  } else {
+    message.textContent = "";
+  }
+}
+
+document.getElementById("categorie-nom").addEventListener("input", verifierNouvelleCategorie);
+document.getElementById("categorie-sens").addEventListener("change", verifierNouvelleCategorie);
+document.getElementById("categorie-portee").addEventListener("change", verifierNouvelleCategorie);
+
 function creerCategorie() {
   const nom = document.getElementById("categorie-nom").value.trim();
   const sens = document.getElementById("categorie-sens").value;
@@ -380,12 +416,9 @@ function creerCategorie() {
     message.textContent = "Donne un nom à la catégorie";
     return;
   }
-  const doublon = etat.categories.some(c =>
-    c.sens === sens
-    && normaliser(c.nom) === normaliser(nom)
-    && (c.portee === portee || c.portee === "tous" || portee === "tous"));
-  if (doublon) {
-    message.textContent = "Cette catégorie existe déjà";
+   const { exacte } = trouverCategorieSimilaire(nom, sens, portee);
+  if (exacte) {
+    message.textContent = "« " + exacte.nom + " » existe déjà.";
     return;
   }
   etat.categories.push({ id: creerIdCategorie(nom), nom: nom, sens: sens, portee: portee });
@@ -399,18 +432,25 @@ function creerCategorie() {
 
 function afficherCategories() {
   const zone = document.getElementById("liste-categories");
-  zone.innerHTML = "";
+  const recherche = normaliser(document.getElementById("recherche-categorie").value);
   const NOMS_PORTEE = { perso: "Perso", commun: "Commun", tous: "Perso et commun" };
-  const triees = [...etat.categories].sort((a, b) =>
-    a.sens.localeCompare(b.sens) || a.nom.localeCompare(b.nom, "fr"));
-  for (const c of triees) {
-    zone.innerHTML += `
-      <div class="op">
-        <div>${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
-        <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
-      </div>`;
+  document.getElementById("resume-categories").textContent =
+    "Mes catégories (" + etat.categories.length + ")";
+  const triees = [...etat.categories]
+    .filter(c => normaliser(c.nom).includes(recherche))
+    .sort((a, b) => a.sens.localeCompare(b.sens) || a.nom.localeCompare(b.nom, "fr"));
+  if (triees.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucune catégorie trouvée</div>`;
+    return;
   }
+  zone.innerHTML = triees.map(c => `
+    <div class="op">
+      <div>${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
+      <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
+    </div>`).join("");
 }
+
+document.getElementById("recherche-categorie").addEventListener("input", afficherCategories);
 
 function supprimerCategorie(e) {
   const id = e.target.dataset.cat;
@@ -571,6 +611,92 @@ function afficherMises() {
       </div>`;
   }
 }
+function virementsVersLeMois(compteId, mois = moisCourant()) {
+  return etat.virements
+    .filter(v => v.versId === compteId && v.date.startsWith(mois))
+    .reduce((somme, v) => somme + v.montant, 0);
+}
+
+function remplirChoixPlan() {
+  const choix = document.getElementById("plan-compte");
+  choix.innerHTML = "";
+  for (const c of comptesActifs().filter(c => c.type !== "courant")) {
+    choix.innerHTML += `<option value="${c.id}">${echapper(c.nom)}</option>`;
+  }
+}
+
+function enregistrerPlan() {
+  const compteId = document.getElementById("plan-compte").value;
+  const montant = eurosVersCentimes(document.getElementById("plan-montant").value);
+  const message = document.getElementById("message-plan");
+  if (!compteId) {
+    message.textContent = "Crée d'abord un livret, un PEA ou une assurance vie";
+    return;
+  }
+  if (isNaN(montant) || montant <= 0) {
+    message.textContent = "Montant invalide";
+    return;
+  }
+  const existant = etat.plansEpargne.find(p => p.compteId === compteId);
+  if (existant) {
+    existant.montant = montant;
+    message.textContent = "Plan mis à jour";
+  } else {
+    etat.plansEpargne.push({ id: "e" + Date.now(), compteId: compteId, montant: montant });
+    message.textContent = "Plan ajouté";
+  }
+  document.getElementById("plan-montant").value = "";
+  sauvegarder();
+  rafraichir();
+}
+
+function dessinerPlans(idZone, filtre) {
+  const zone = document.getElementById(idZone);
+  const plans = etat.plansEpargne.filter(p => {
+    const c = etat.comptes.find(x => x.id === p.compteId);
+    return c && !c.archive && filtre(c);
+  });
+  if (plans.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucun plan. Tu peux en créer un dans ⚙ Réglages, « Plans d'épargne ».</div>`;
+    return;
+  }
+  zone.innerHTML = plans.map(p => {
+    const c = etat.comptes.find(x => x.id === p.compteId);
+    const fait = virementsVersLeMois(p.compteId);
+    const ratio = fait / p.montant;
+    const pct = Math.min(100, Math.round(ratio * 100));
+    return `
+      <div class="budget">
+        <div class="budget-ligne">
+          <span>${echapper(c.nom)}</span>
+          <span>${centimesVersEuros(fait)} / ${centimesVersEuros(p.montant)}
+            <button class="supprimer" data-plan="${p.id}" aria-label="Retirer ce plan">✕</button></span>
+        </div>
+        <div class="jauge"><div class="jauge-remplie" data-pct="${pct}" style="width:${pct}%"></div></div>
+        ${ratio >= 1
+          ? `<div class="succes">✓ Fait ce mois-ci</div>`
+          : `<small class="mu">Il reste ${centimesVersEuros(p.montant - fait)} à verser</small>`}
+      </div>`;
+  }).join("");
+}
+
+function afficherPlans() {
+  dessinerPlans("liste-plans-livrets", c => c.type === "livret");
+  dessinerPlans("liste-plans-placements", estPlacement);
+}
+
+function retirerPlan(e) {
+  const id = e.target.dataset.plan;
+  if (!id) return;
+  if (!confirm("Retirer ce plan d'épargne ? Les virements déjà faits sont conservés.")) return;
+  etat.plansEpargne = etat.plansEpargne.filter(p => p.id !== id);
+  sauvegarder();
+  rafraichir();
+}
+
+document.getElementById("bouton-plan").addEventListener("click", enregistrerPlan);
+document.getElementById("liste-plans-livrets").addEventListener("click", retirerPlan);
+document.getElementById("liste-plans-placements").addEventListener("click", retirerPlan);
 
 function creerObjectif() {
   const nom = document.getElementById("objectif-nom").value.trim();
@@ -715,11 +841,16 @@ function afficherPatrimoine() {
 }
 function ajouterVirement() {
   const montant = eurosVersCentimes(document.getElementById("virement-montant").value);
+  const date = document.getElementById("date-virement").value;
   const depuis = document.getElementById("virement-depuis").value;
   const vers = document.getElementById("virement-vers").value;
   const message = document.getElementById("message-virement");
   if (isNaN(montant) || montant <= 0) {
     message.textContent = "Montant invalide";
+    return;
+  }
+  if (!dateValide(date)) {
+    message.textContent = "Date invalide (pas dans le futur)";
     return;
   }
   if (depuis === vers) {
@@ -732,7 +863,7 @@ function ajouterVirement() {
     depuisId: depuis,
     versId: vers,
     montant: montant,
-    date: new Date().toLocaleDateString("sv-SE")
+    date: date
   });
   document.getElementById("virement-montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
@@ -740,24 +871,6 @@ function ajouterVirement() {
   rafraichir();
 }
 
-function afficherVirements() {
-  const zone = document.getElementById("liste-virements");
-  zone.innerHTML = "";
-  const recents = [...etat.virements]
-    .reverse()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 10);
-  for (const v of recents) {
-    const depuis = etat.comptes.find(c => c.id === v.depuisId);
-    const vers = etat.comptes.find(c => c.id === v.versId);
-    zone.innerHTML += `
-      <div class="op">
-        <div>${echapper(depuis.nom)} → ${echapper(vers.nom)}<small>${v.date}</small></div>
-        <span>${centimesVersEuros(v.montant)}</span>
-        <button class="supprimer" data-id="${v.id}" aria-label="Supprimer">✕</button>
-      </div>`;
-  }
-}
 function majChampVerse() {
   const type = document.getElementById("compte-type").value;
   document.getElementById("compte-verse").hidden = !TYPES_PLACEMENT.includes(type);
@@ -883,7 +996,8 @@ function etatValide(e) {
     && (e.misesDeCote || []).every(m => idOk(m.id) && dateOk(m.date)
       && montantOk(m.montant) && (e.objectifs || []).some(o => o.id === m.objectifId))
       && (e.badges || []).every(x => /^[a-z-]+$/.test(x.id) && dateOk(x.date))
-      && (e.bilansVus || []).every(m => /^\d{4}-\d{2}$/.test(m));
+      && (e.bilansVus || []).every(m => /^\d{4}-\d{2}$/.test(m))
+       && (e.plansEpargne || []).every(p => idOk(p.id) && montantOk(p.montant) && ids.has(p.compteId));
 }
 
 function exporterSauvegarde() {
@@ -906,7 +1020,7 @@ function importerSauvegarde(fichier) {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
       if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [] }, donnees.etat);
+      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [] }, donnees.etat);
       sauvegarder();
       remplirChoixComptes();
       remplirChoixCategories();
@@ -924,46 +1038,141 @@ document.getElementById("fichier-import").addEventListener("change", (e) => {
   if (e.target.files[0]) importerSauvegarde(e.target.files[0]);
   e.target.value = "";
 });
+let operationEnEdition = null;
+
+function dateValide(texte) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(texte) && texte <= aujourdhui();
+}
+
+function preparerSaisie() {
+  operationEnEdition = null;
+  for (const id of ["date-operation", "date-virement"]) {
+    const champ = document.getElementById(id);
+    champ.value = aujourdhui();
+    champ.max = aujourdhui();
+  }
+  document.getElementById("montant").value = "";
+  document.getElementById("message").textContent = "";
+  document.getElementById("bouton-ajouter").textContent = "Ajouter";
+  document.getElementById("annuler-edition").hidden = true;
+  document.getElementById("titre-edition").hidden = true;
+  document.querySelector(".bascule").hidden = false;
+}
+
 function ajouterOperation() {
   const montant = eurosVersCentimes(document.getElementById("montant").value);
+  const date = document.getElementById("date-operation").value;
+  const compteId = document.getElementById("choix-compte").value;
   const message = document.getElementById("message");
   if (isNaN(montant) || montant <= 0) {
     message.textContent = "Montant invalide";
     return;
   }
+  if (!dateValide(date)) {
+    message.textContent = "Date invalide (pas dans le futur)";
+    return;
+  }
+  if (!compteId) {
+    message.textContent = "Crée d'abord un compte (⚙ Réglages)";
+    return;
+  }
   message.textContent = "";
-  etat.operations.push({
-    id: "o" + Date.now(),
-    compteId: document.getElementById("choix-compte").value,
+  const champs = {
+    compteId: compteId,
     sens: document.getElementById("choix-sens").value,
     montant: montant,
-    date: new Date().toLocaleDateString("sv-SE"),
+    date: date,
     categorie: document.getElementById("choix-categorie").value
-  });
+  };
+  if (operationEnEdition) {
+    const op = etat.operations.find(o => o.id === operationEnEdition);
+    if (op) Object.assign(op, champs);
+  } else {
+    etat.operations.push({ id: "o" + Date.now(), ...champs });
+  }
+  operationEnEdition = null;
   document.getElementById("montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
   sauvegarder();
   rafraichir();
 }
+
+function ouvrirEdition(id) {
+  const op = etat.operations.find(o => o.id === id);
+  if (!op) return;
+  const choixCompte = document.getElementById("choix-compte");
+  choixCompte.value = op.compteId;
+  if (choixCompte.value !== op.compteId) {
+    montrerNotif("Ce compte est archivé : réactive-le pour modifier cette opération.");
+    return;
+  }
+  preparerSaisie();
+  operationEnEdition = id;
+  afficherFormulaire("operation");
+  document.getElementById("montant").value = (op.montant / 100).toFixed(2).replace(".", ",");
+  document.getElementById("date-operation").value = op.date;
+  document.getElementById("choix-sens").value = op.sens;
+  remplirChoixCategories();
+  document.getElementById("choix-categorie").value = op.categorie;
+  document.getElementById("bouton-ajouter").textContent = "Enregistrer la modification";
+  document.getElementById("annuler-edition").hidden = false;
+  document.getElementById("titre-edition").hidden = false;
+  document.querySelector(".bascule").hidden = true;
+  document.getElementById("panneau-saisie").hidden = false;
+}
+
+function cliquerEdition(e) {
+  const cible = e.target.closest("[data-edit]");
+  if (cible) ouvrirEdition(cible.dataset.edit);
+}
+
+document.getElementById("liste-operations-perso").addEventListener("click", cliquerEdition);
+document.getElementById("liste-operations-commun").addEventListener("click", cliquerEdition);
+document.getElementById("annuler-edition").addEventListener("click", () => {
+  document.getElementById("panneau-saisie").hidden = true;
+  preparerSaisie();
+});
+function ligneOperation(op) {
+  const compte = etat.comptes.find(c => c.id === op.compteId);
+  const signe = op.sens === "revenu" ? "+" : "−";
+  return `
+    <div class="op">
+      <div class="cliquable" data-edit="${op.id}">${nomCategorie(op.categorie)}<small>${op.date} · ${echapper(compte.nom)}</small></div>
+      <span class="${op.sens} cliquable" data-edit="${op.id}">${signe} ${centimesVersEuros(op.montant)}</span>
+      <button class="supprimer" data-id="${op.id}" data-type="op" aria-label="Supprimer">✕</button>
+    </div>`;
+}
+
+function ligneVirement(v) {
+  const depuis = etat.comptes.find(c => c.id === v.depuisId);
+  const vers = etat.comptes.find(c => c.id === v.versId);
+  return `
+    <div class="op">
+      <div>Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small></div>
+      <span>${centimesVersEuros(v.montant)}</span>
+      <button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>
+    </div>`;
+}
+
 function afficherOperations() {
   for (const portee of ["perso", "commun"]) {
     const zone = document.getElementById("liste-operations-" + portee);
-    zone.innerHTML = "";
-    const recentes = [...etat.operations]
-      .filter(op => porteeDuCompte(op.compteId) === portee)
-      .reverse()
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 10);
-    for (const op of recentes) {
-      const compte = etat.comptes.find(c => c.id === op.compteId);
-      const signe = op.sens === "revenu" ? "+" : "−";
-      zone.innerHTML += `
-        <div class="op">
-          <div>${nomCategorie(op.categorie)}<small>${op.date} · ${echapper(compte.nom)}</small></div>
-          <span class="${op.sens}">${signe} ${centimesVersEuros(op.montant)}</span>
-          <button class="supprimer" data-id="${op.id}" aria-label="Supprimer">✕</button>
-        </div>`;
+    const entrees = [];
+    for (const op of etat.operations) {
+      if (porteeDuCompte(op.compteId) === portee) {
+        entrees.push({ type: "op", date: op.date, id: op.id, donnee: op });
+      }
     }
+    for (const v of etat.virements) {
+      if (porteeDuCompte(v.depuisId) === portee || porteeDuCompte(v.versId) === portee) {
+        entrees.push({ type: "virement", date: v.date, id: v.id, donnee: v });
+      }
+    }
+    entrees.sort((a, b) =>
+      b.date.localeCompare(a.date) || momentDe(b.id) - momentDe(a.id));
+    zone.innerHTML = entrees.slice(0, 15)
+      .map(e => e.type === "op" ? ligneOperation(e.donnee) : ligneVirement(e.donnee))
+      .join("");
   }
 }
 
@@ -972,7 +1181,6 @@ function rafraichir() {
   afficherOperations();
   afficherBudgets();
   afficherReste();
-  afficherVirements();
   afficherValorisations();
   afficherPatrimoine();
   afficherGestionComptes();
@@ -984,32 +1192,23 @@ function rafraichir() {
   afficherBadges();
   afficherCarteBilan();
   afficherCategories();
+  afficherPlans();
 }
 
 function supprimerOperation(e) {
   const id = e.target.dataset.id;
+  const type = e.target.dataset.type;
   if (!id) return;
-  if (!confirm("Supprimer cette opération ?")) return;
-  etat.operations = etat.operations.filter(op => op.id !== id);
+  if (type === "virement") {
+    if (!confirm("Supprimer ce virement ?")) return;
+    etat.virements = etat.virements.filter(v => v.id !== id);
+  } else {
+    if (!confirm("Supprimer cette opération ?")) return;
+    etat.operations = etat.operations.filter(op => op.id !== id);
+  }
   sauvegarder();
   rafraichir();
 }
-
-document.getElementById("liste-operations-perso").addEventListener("click", supprimerOperation);
-document.getElementById("liste-operations-commun").addEventListener("click", supprimerOperation);
-document.getElementById("bouton-ajouter").addEventListener("click", ajouterOperation);
-
-document.getElementById("bouton-compte").addEventListener("click", creerCompte);
-
-document.getElementById("bouton-virement").addEventListener("click", ajouterVirement);
-document.getElementById("liste-virements").addEventListener("click", (e) => {
-  const id = e.target.dataset.id;
-  if (!id) return;
-  if (!confirm("Supprimer ce virement ?")) return;
-  etat.virements = etat.virements.filter(v => v.id !== id);
-  sauvegarder();
-  rafraichir();
-});
 function aujourdhui() {
   return new Date().toLocaleDateString("sv-SE");
 }
@@ -1195,8 +1394,12 @@ function calculerBilan(mois) {
     .map(x => BADGES.find(b => b.id === x.id))
     .filter(Boolean)
     .map(b => b.nom);
-
-  return { revenus, depenses, epargne, respectes, pire, variation, badges,
+ const plans = etat.plansEpargne.filter(p =>
+    etat.comptes.some(c => c.id === p.compteId && !c.archive));
+  const plansTenus = plans.filter(p => virementsVersLeMois(p.compteId, mois) >= p.montant).length;
+  const plansTotal = plans.length;
+  
+return { revenus, depenses, epargne, respectes, pire, variation, badges, plansTenus, plansTotal,
            objectifs: somme(etat.misesDeCote.filter(m => m.date.startsWith(mois))) };
 }
 
@@ -1215,6 +1418,9 @@ function afficherBilan(mois) {
   html += `<div class="ligne"><span>Solde du mois</span><strong>${solde >= 0 ? "+" : "−"} ${centimesVersEuros(Math.abs(solde))}</strong></div>`;
   html += ligneMontant("Mis de côté (livrets, placements)", b.epargne);
   html += ligneMontant("Objectifs d'achat alimentés", b.objectifs);
+   if (b.plansTotal > 0) {
+    html += `<div class="ligne"><span>Plans d'épargne tenus</span><strong>${b.plansTenus} sur ${b.plansTotal}</strong></div>`;
+  }
   if (b.variation !== null) {
     html += `<div class="ligne"><span>Dépenses vs mois précédent</span><strong>${b.variation > 0 ? "+" : ""}${b.variation} %</strong></div>`;
   }
@@ -1324,14 +1530,21 @@ document.getElementById("bouton-reglages").addEventListener("click", () => affic
 document.getElementById("fermer-reglages").addEventListener("click", () => afficherVue(vuePrecedente));
 
 document.getElementById("bouton-plus").addEventListener("click", () => {
+  preparerSaisie();
   afficherFormulaire("operation");
   document.getElementById("panneau-saisie").hidden = false;
 });
 document.getElementById("fermer-saisie").addEventListener("click", () => {
   document.getElementById("panneau-saisie").hidden = true;
+  preparerSaisie();
 });
 document.getElementById("onglet-operation").addEventListener("click", () => afficherFormulaire("operation"));
 document.getElementById("onglet-virement").addEventListener("click", () => afficherFormulaire("virement"));
+document.getElementById("bouton-compte").addEventListener("click", creerCompte);
+document.getElementById("bouton-ajouter").addEventListener("click", ajouterOperation);
+document.getElementById("bouton-virement").addEventListener("click", ajouterVirement);
+document.getElementById("liste-operations-perso").addEventListener("click", supprimerOperation);
+document.getElementById("liste-operations-commun").addEventListener("click", supprimerOperation);
 charger();
 remplirChoixComptes();
 remplirChoixCategories();

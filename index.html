@@ -36,7 +36,7 @@
       <section id="liste-comptes-perso"></section>
       <h2>Budgets du mois</h2>
       <section id="liste-budgets-perso"></section>
-      <h2>Dernières opérations</h2>
+      <h2>Derniers mouvements</h2>
       <section id="liste-operations-perso"></section>
     </section>
 
@@ -45,13 +45,15 @@
       <section id="liste-comptes-commun"></section>
       <h2>Budgets du mois</h2>
       <section id="liste-budgets-commun"></section>
-      <h2>Dernières opérations</h2>
+      <h2>Derniers mouvements</h2>
       <section id="liste-operations-commun"></section>
     </section>
 
     <section id="vue-livrets" class="vue" hidden>
       <h2>Livrets</h2>
       <section id="liste-livrets"></section>
+      <h2>Épargne du mois</h2>
+<section id="liste-plans-livrets"></section>
       <h2>Matelas de sécurité</h2>
 <div class="saisie">
   <select id="choix-mois-matelas">
@@ -80,13 +82,13 @@
   <button id="bouton-objectif-creer" type="button">Créer l'objectif</button>
   <p id="message-objectif"></p>
 </div>
-      <h2>Derniers virements</h2>
-      <section id="liste-virements"></section>
     </section>
 
     <section id="vue-placements" class="vue" hidden>
       <h2>PEA et assurance vie</h2>
       <section id="liste-placements"></section>
+      <h2>Versements du mois</h2>
+<section id="liste-plans-placements"></section>
       <h2>Mettre à jour un placement</h2>
       <div class="saisie">
         <select id="valo-compte"></select>
@@ -98,75 +100,98 @@
       <section id="liste-valorisations"></section>
     </section>
 
-    <section id="vue-reglages" class="vue" hidden>
-      <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
-<h2>Ajouter une catégorie</h2>
-<div class="saisie">
-  <input id="categorie-nom" type="text" maxlength="40" placeholder="Nom (ex : Netflix)">
-  <select id="categorie-sens">
-    <option value="depense">Dépense</option>
-    <option value="revenu">Revenu</option>
-  </select>
-  <select id="categorie-portee">
-    <option value="perso">Perso</option>
-    <option value="commun">Commun</option>
-    <option value="tous">Perso et commun</option>
-  </select>
-  <button id="bouton-categorie" type="button">Ajouter la catégorie</button>
-  <p id="message-categorie"></p>
-</div>
+<section id="vue-reglages" class="vue" hidden>
+  <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
 
-<h2>Mes catégories</h2>
-<section id="liste-categories"></section>
-<p id="message-categorie-liste" class="mu"></p>
+  <details class="repliable">
+    <summary>Comptes</summary>
+    <h3>Nouveau compte</h3>
+    <div class="saisie">
+      <input id="compte-nom" type="text" placeholder="Nom du compte (ex : Livret A)">
+      <select id="compte-type">
+        <option value="courant">Courant</option>
+        <option value="livret">Livret</option>
+        <option value="pea">PEA</option>
+        <option value="assurance-vie">Assurance vie</option>
+      </select>
+      <select id="compte-proprio">
+        <option value="perso">Perso</option>
+        <option value="commun">Commun</option>
+      </select>
+      <input id="compte-solde" type="text" inputmode="decimal" placeholder="Solde de départ (ex : 1200)">
+      <input id="compte-verse" type="text" inputmode="decimal" placeholder="Total déjà versé (ex : 10000)" hidden>
+      <button id="bouton-compte" type="button">Créer le compte</button>
+      <p id="message-compte"></p>
+    </div>
+    <h3>Gérer les comptes</h3>
+    <section id="gestion-comptes"></section>
+    <p id="message-gestion" class="mu"></p>
+    <h3>Comptes archivés</h3>
+    <section id="comptes-archives"></section>
+  </details>
 
-<h2>Ajouter ou modifier un budget</h2>
-<div class="saisie">
-  <select id="budget-portee">
-    <option value="perso">Perso</option>
-    <option value="commun">Commun</option>
-  </select>
-  <select id="budget-categorie"></select>
-  <input id="budget-montant" type="text" inputmode="decimal" placeholder="Montant par mois (ex : 250)">
-  <button id="bouton-budget" type="button">Enregistrer le budget</button>
-  <p id="message-budget"></p>
-</div>
-      <h2>Nouveau compte</h2>
-      <div class="saisie">
-        <input id="compte-nom" type="text" placeholder="Nom du compte (ex : Livret A)">
-        <select id="compte-type">
-          <option value="courant">Courant</option>
-          <option value="livret">Livret</option>
-          <option value="pea">PEA</option>
-          <option value="assurance-vie">Assurance vie</option>
-        </select>
-        <select id="compte-proprio">
-          <option value="perso">Perso</option>
-          <option value="commun">Commun</option>
-        </select>
-        <input id="compte-solde" type="text" inputmode="decimal" placeholder="Solde de départ (ex : 1200)">
-        <input id="compte-verse" type="text" inputmode="decimal" placeholder="Total déjà versé (ex : 10000)" hidden>
-        <button id="bouton-compte" type="button">Créer le compte</button>
-        <p id="message-compte"></p>
-      </div>
-      <h2>Gérer les comptes</h2>
-<section id="gestion-comptes"></section>
-<p id="message-gestion"></p>
-<h2>Comptes archivés</h2>
-<section id="comptes-archives"></section>
-      <h2>Sauvegarde</h2>
-      <div class="saisie">
-        <button id="bouton-export" type="button">Exporter une sauvegarde</button>
-        <input id="fichier-import" type="file" accept=".json,application/json">
-        <p id="message-sauvegarde"></p>
-      </div>
-    </section>
+  <details class="repliable">
+    <summary>Budgets et catégories</summary>
+    <h3>Ajouter ou modifier un budget</h3>
+    <div class="saisie">
+      <select id="budget-portee">
+        <option value="perso">Perso</option>
+        <option value="commun">Commun</option>
+      </select>
+      <select id="budget-categorie"></select>
+      <input id="budget-montant" type="text" inputmode="decimal" placeholder="Montant par mois (ex : 250)">
+      <button id="bouton-budget" type="button">Enregistrer le budget</button>
+      <p id="message-budget"></p>
+    </div>
+    <h3>Ajouter une catégorie</h3>
+    <div class="saisie">
+      <input id="categorie-nom" type="text" maxlength="40" placeholder="Nom (ex : Netflix)">
+      <select id="categorie-sens">
+        <option value="depense">Dépense</option>
+        <option value="revenu">Revenu</option>
+      </select>
+      <select id="categorie-portee">
+        <option value="perso">Perso</option>
+        <option value="commun">Commun</option>
+        <option value="tous">Perso et commun</option>
+      </select>
+      <button id="bouton-categorie" type="button">Ajouter la catégorie</button>
+      <p id="message-categorie"></p>
+    </div>
+    <details class="repliable interne">
+      <summary id="resume-categories">Voir mes catégories</summary>
+      <input id="recherche-categorie" type="search" placeholder="Rechercher une catégorie">
+      <section id="liste-categories"></section>
+      <p id="message-categorie-liste" class="mu"></p>
+    </details>
+  </details>
+  <details class="repliable">
+  <summary>Plans d'épargne</summary>
+  <h3>Ajouter ou modifier un plan</h3>
+  <div class="saisie">
+    <select id="plan-compte"></select>
+    <input id="plan-montant" type="text" inputmode="decimal" placeholder="Montant à verser par mois (ex : 200)">
+    <button id="bouton-plan" type="button">Enregistrer le plan</button>
+    <p id="message-plan"></p>
+  </div>
+</details>
+
+  <details class="repliable">
+    <summary>Sauvegarde</summary>
+    <div class="saisie">
+      <button id="bouton-export" type="button">Exporter une sauvegarde</button>
+      <input id="fichier-import" type="file" accept=".json,application/json">
+      <p id="message-sauvegarde"></p>
+    </div>
+  </details>
+</section>
   </main>
 
   <button id="bouton-plus" type="button" aria-label="Ajouter une opération">+</button>
 
 <div id="panneau-saisie" class="panneau" hidden>
   <div class="panneau-contenu">
+    <h2 id="titre-edition" hidden>Modifier l'opération</h2>
     <div class="bascule">
       <button type="button" id="onglet-operation" class="actif">Opération</button>
       <button type="button" id="onglet-virement">Virement</button>
@@ -174,6 +199,8 @@
 
     <div id="formulaire-operation" class="saisie">
       <input id="montant" type="text" inputmode="decimal" placeholder="Montant (ex : 62,30)">
+      <span class="mu">Date</span>
+<input id="date-operation" type="date">
       <select id="choix-compte"></select>
       <select id="choix-sens">
         <option value="depense">Dépense</option>
@@ -183,12 +210,15 @@
       <button id="bouton-ajouter" type="button">Ajouter</button>
       <p id="message"></p>
     </div>
+<button id="annuler-edition" type="button" class="lien" hidden>Annuler la modification</button>
 
     <div id="formulaire-virement" class="saisie" hidden>
       <span class="mu">Depuis</span>
       <select id="virement-depuis"></select>
       <span class="mu">Vers</span>
       <select id="virement-vers"></select>
+      <span class="mu">Date</span>
+<input id="date-virement" type="date">
       <input id="virement-montant" type="text" inputmode="decimal" placeholder="Montant (ex : 200)">
       <button id="bouton-virement" type="button">Virer</button>
       <p id="message-virement"></p>
