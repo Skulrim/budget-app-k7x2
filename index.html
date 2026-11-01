@@ -100,15 +100,33 @@
 
     <section id="vue-reglages" class="vue" hidden>
       <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
-      <h2>Ajouter ou modifier un budget</h2>
+<h2>Ajouter une catégorie</h2>
 <div class="saisie">
-  <input id="budget-nom" type="text" maxlength="40" list="suggestions-budget"
-         placeholder="Nom du poste (ex : Courses Leclerc)">
-  <datalist id="suggestions-budget"></datalist>
+  <input id="categorie-nom" type="text" maxlength="40" placeholder="Nom (ex : Netflix)">
+  <select id="categorie-sens">
+    <option value="depense">Dépense</option>
+    <option value="revenu">Revenu</option>
+  </select>
+  <select id="categorie-portee">
+    <option value="perso">Perso</option>
+    <option value="commun">Commun</option>
+    <option value="tous">Perso et commun</option>
+  </select>
+  <button id="bouton-categorie" type="button">Ajouter la catégorie</button>
+  <p id="message-categorie"></p>
+</div>
+
+<h2>Mes catégories</h2>
+<section id="liste-categories"></section>
+<p id="message-categorie-liste" class="mu"></p>
+
+<h2>Ajouter ou modifier un budget</h2>
+<div class="saisie">
   <select id="budget-portee">
     <option value="perso">Perso</option>
     <option value="commun">Commun</option>
   </select>
+  <select id="budget-categorie"></select>
   <input id="budget-montant" type="text" inputmode="decimal" placeholder="Montant par mois (ex : 250)">
   <button id="bouton-budget" type="button">Enregistrer le budget</button>
   <p id="message-budget"></p>

@@ -333,57 +333,107 @@ function creerIdCategorie(nom) {
   return id;
 }
 
-function remplirSuggestionsBudget() {
-  const liste = document.getElementById("suggestions-budget");
-  liste.innerHTML = "";
-  const noms = [...new Set(
-    etat.categories.filter(c => c.sens === "depense").map(c => c.nom))];
-  for (const nom of noms) {
-    liste.innerHTML += `<option value="${echapper(nom)}"></option>`;
+function remplirChoixBudget() {
+  const portee = document.getElementById("budget-portee").value;
+  const choix = document.getElementById("budget-categorie");
+  choix.innerHTML = "";
+  const liste = etat.categories.filter(c =>
+    c.sens === "depense" && (c.portee === portee || c.portee === "tous"));
+  for (const c of liste) {
+    choix.innerHTML += `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`;
   }
 }
 
 function enregistrerBudget() {
-  const nom = document.getElementById("budget-nom").value.trim();
   const portee = document.getElementById("budget-portee").value;
+  const categorieId = document.getElementById("budget-categorie").value;
   const montant = eurosVersCentimes(document.getElementById("budget-montant").value);
   const message = document.getElementById("message-budget");
-  if (nom === "") {
-    message.textContent = "Donne un nom au poste";
+  if (!categorieId) {
+    message.textContent = "Aucune catégorie : ajoutes-en une d'abord";
     return;
   }
   if (isNaN(montant) || montant <= 0) {
     message.textContent = "Montant invalide";
     return;
   }
-  if (!document.getElementById("choix-compte").value) {
-    message.textContent = "Crée d'abord un compte (⚙ Réglages)";
-    return;
-  }
-  let categorie = etat.categories.find(c =>
-    c.sens === "depense"
-    && (c.portee === portee || c.portee === "tous")
-    && normaliser(c.nom) === normaliser(nom));
-  if (!categorie) {
-    categorie = { id: creerIdCategorie(nom), nom: nom, sens: "depense", portee: portee };
-    etat.categories.push(categorie);
-  }
   const existant = etat.budgets.find(b =>
-    b.portee === portee && b.categorie === categorie.id);
+    b.portee === portee && b.categorie === categorieId);
   if (existant) {
     existant.montant = montant;
     message.textContent = "Budget mis à jour";
   } else {
-    etat.budgets.push({ portee: portee, categorie: categorie.id, montant: montant });
+    etat.budgets.push({ portee: portee, categorie: categorieId, montant: montant });
     message.textContent = "Budget ajouté";
   }
-  document.getElementById("budget-nom").value = "";
   document.getElementById("budget-montant").value = "";
   sauvegarder();
-  remplirChoixCategories();
-  remplirSuggestionsBudget();
   rafraichir();
 }
+
+function creerCategorie() {
+  const nom = document.getElementById("categorie-nom").value.trim();
+  const sens = document.getElementById("categorie-sens").value;
+  const portee = document.getElementById("categorie-portee").value;
+  const message = document.getElementById("message-categorie");
+  if (nom === "") {
+    message.textContent = "Donne un nom à la catégorie";
+    return;
+  }
+  const doublon = etat.categories.some(c =>
+    c.sens === sens
+    && normaliser(c.nom) === normaliser(nom)
+    && (c.portee === portee || c.portee === "tous" || portee === "tous"));
+  if (doublon) {
+    message.textContent = "Cette catégorie existe déjà";
+    return;
+  }
+  etat.categories.push({ id: creerIdCategorie(nom), nom: nom, sens: sens, portee: portee });
+  message.textContent = "Catégorie ajoutée";
+  document.getElementById("categorie-nom").value = "";
+  sauvegarder();
+  remplirChoixCategories();
+  remplirChoixBudget();
+  rafraichir();
+}
+
+function afficherCategories() {
+  const zone = document.getElementById("liste-categories");
+  zone.innerHTML = "";
+  const NOMS_PORTEE = { perso: "Perso", commun: "Commun", tous: "Perso et commun" };
+  const triees = [...etat.categories].sort((a, b) =>
+    a.sens.localeCompare(b.sens) || a.nom.localeCompare(b.nom, "fr"));
+  for (const c of triees) {
+    zone.innerHTML += `
+      <div class="op">
+        <div>${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
+        <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
+      </div>`;
+  }
+}
+
+function supprimerCategorie(e) {
+  const id = e.target.dataset.cat;
+  if (!id) return;
+  const message = document.getElementById("message-categorie-liste");
+  const utilisee = etat.operations.some(o => o.categorie === id)
+    || etat.budgets.some(b => b.categorie === id);
+  if (utilisee) {
+    message.textContent = "Cette catégorie est utilisée (opérations ou budget) : retire d'abord le budget, elle ne peut pas être supprimée si des opérations l'utilisent.";
+    return;
+  }
+  if (!confirm("Supprimer cette catégorie ?")) return;
+  message.textContent = "";
+  etat.categories = etat.categories.filter(c => c.id !== id);
+  sauvegarder();
+  remplirChoixCategories();
+  remplirChoixBudget();
+  rafraichir();
+}
+
+document.getElementById("bouton-categorie").addEventListener("click", creerCategorie);
+document.getElementById("liste-categories").addEventListener("click", supprimerCategorie);
+document.getElementById("budget-portee").addEventListener("change", remplirChoixBudget);
 
 function retirerBudget(e) {
   const portee = e.target.dataset.portee;
@@ -933,6 +983,7 @@ function rafraichir() {
   afficherSeries();
   afficherBadges();
   afficherCarteBilan();
+  afficherCategories();
 }
 
 function supprimerOperation(e) {
@@ -1285,7 +1336,7 @@ charger();
 remplirChoixComptes();
 remplirChoixCategories();
 majChampVerse();
-remplirSuggestionsBudget();
+remplirChoixBudget();
 rafraichir();
 afficherVue("accueil");
 if ("serviceWorker" in navigator) {
