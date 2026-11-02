@@ -212,3 +212,9 @@ h2 {
 }
 .saisie input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
 .cliquable { cursor: pointer; }
+.rappel {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: var(--accent-clair); color: var(--accent-texte);
+  border-radius: var(--rayon); padding: 10px 14px; margin-top: 12px; font-size: 14px;
+}
+.lien-action[data-mouvements] { margin-top: 10px; }

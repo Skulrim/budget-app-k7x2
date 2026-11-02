@@ -21,6 +21,7 @@
 
   <main>
     <section id="vue-accueil" class="vue">
+      <section id="carte-rappels"></section>
       <section id="carte-patrimoine" class="patrimoine"></section>
       <section id="carte-reste" class="hero"></section>
       <section id="carte-series" class="patrimoine"></section>
@@ -38,6 +39,7 @@
       <section id="liste-budgets-perso"></section>
       <h2>Derniers mouvements</h2>
       <section id="liste-operations-perso"></section>
+      <button type="button" class="lien-action" data-mouvements="perso">Voir tous les mouvements</button>
     </section>
 
     <section id="vue-commun" class="vue" hidden>
@@ -47,6 +49,7 @@
       <section id="liste-budgets-commun"></section>
       <h2>Derniers mouvements</h2>
       <section id="liste-operations-commun"></section>
+      <button type="button" class="lien-action" data-mouvements="commun">Voir tous les mouvements</button>
     </section>
 
     <section id="vue-livrets" class="vue" hidden>
@@ -100,6 +103,17 @@
       <section id="liste-valorisations"></section>
     </section>
 
+<section id="vue-mouvements" class="vue" hidden>
+  <button id="fermer-mouvements" type="button" class="lien retour">← Retour</button>
+  <h2 id="titre-mouvements">Mouvements</h2>
+  <div class="saisie">
+    <select id="mouvements-mois"></select>
+    <select id="mouvements-categorie"></select>
+    <input id="mouvements-recherche" type="search" placeholder="Rechercher (catégorie, compte, note)">
+  </div>
+  <section id="mouvements-total" class="patrimoine"></section>
+  <section id="liste-mouvements"></section>
+</section>
 <section id="vue-reglages" class="vue" hidden>
   <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
 
@@ -207,6 +221,7 @@
         <option value="revenu">Revenu</option>
       </select>
       <select id="choix-categorie"></select>
+      <input id="note-operation" type="text" maxlength="80" placeholder="Note (facultative)">
       <button id="bouton-ajouter" type="button">Ajouter</button>
       <p id="message"></p>
     </div>
@@ -220,6 +235,7 @@
       <span class="mu">Date</span>
 <input id="date-virement" type="date">
       <input id="virement-montant" type="text" inputmode="decimal" placeholder="Montant (ex : 200)">
+      <input id="note-virement" type="text" maxlength="80" placeholder="Note (facultative)">
       <button id="bouton-virement" type="button">Virer</button>
       <p id="message-virement"></p>
     </div>

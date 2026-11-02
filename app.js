@@ -265,7 +265,7 @@ function afficherBudgets() {
       const alerte = ratio >= SEUIL_ALERTE;
       const texte = ratio >= 1 ? "Plafond dépassé" : "Presque au plafond";
       zone.innerHTML += `
-        <div class="budget">
+                <div class="budget cliquable" data-detail="${b.portee}:${echapper(b.categorie)}">
           <div class="budget-ligne">
             <span>${nomCategorie(b.categorie)}</span>
             <span>${centimesVersEuros(depense)} / ${centimesVersEuros(b.montant)}
@@ -863,7 +863,8 @@ function ajouterVirement() {
     depuisId: depuis,
     versId: vers,
     montant: montant,
-    date: date
+    date: date,
+    note: document.getElementById("note-virement").value.trim().slice(0, 80)
   });
   document.getElementById("virement-montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
@@ -991,16 +992,23 @@ function etatValide(e) {
       && ["depense", "revenu"].includes(c.sens))
     && (e.valorisations || []).every(v => idOk(v.id) && dateOk(v.date)
       && Number.isInteger(v.valeur) && ids.has(v.compteId))
-      && (e.reglages === undefined || [3, 4, 5, 6].includes(e.reglages.moisMatelas))
+      && (e.reglages === undefined || ([3, 4, 5, 6].includes(e.reglages.moisMatelas)
+         && (e.reglages.dernierExport === undefined || dateOk(e.reglages.dernierExport))))
       && (e.objectifs || []).every(o => idOk(o.id) && montantOk(o.cible))
     && (e.misesDeCote || []).every(m => idOk(m.id) && dateOk(m.date)
       && montantOk(m.montant) && (e.objectifs || []).some(o => o.id === m.objectifId))
       && (e.badges || []).every(x => /^[a-z-]+$/.test(x.id) && dateOk(x.date))
       && (e.bilansVus || []).every(m => /^\d{4}-\d{2}$/.test(m))
-       && (e.plansEpargne || []).every(p => idOk(p.id) && montantOk(p.montant) && ids.has(p.compteId));
+       && (e.plansEpargne || []).every(p => idOk(p.id) && montantOk(p.montant) && ids.has(p.compteId))
+    && e.operations.every(o => o.note === undefined
+         || (typeof o.note === "string" && o.note.length <= 80))
+    && e.virements.every(v => v.note === undefined
+         || (typeof v.note === "string" && v.note.length <= 80));
 }
 
 function exporterSauvegarde() {
+  etat.reglages.dernierExport = aujourdhui();
+  sauvegarder();
   const contenu = JSON.stringify(
     { version: 1, exporteLe: new Date().toISOString(), etat: etat }, null, 2);
   const blob = new Blob([contenu], { type: "application/json" });
@@ -1010,6 +1018,7 @@ function exporterSauvegarde() {
   lien.download = "budget-sauvegarde-" + new Date().toLocaleDateString("sv-SE") + ".json";
   lien.click();
   URL.revokeObjectURL(url);
+  afficherRappels();
 }
 
 function importerSauvegarde(fichier) {
@@ -1052,6 +1061,8 @@ function preparerSaisie() {
     champ.max = aujourdhui();
   }
   document.getElementById("montant").value = "";
+  document.getElementById("note-operation").value = "";
+  document.getElementById("note-virement").value = "";
   document.getElementById("message").textContent = "";
   document.getElementById("bouton-ajouter").textContent = "Ajouter";
   document.getElementById("annuler-edition").hidden = true;
@@ -1082,7 +1093,8 @@ function ajouterOperation() {
     sens: document.getElementById("choix-sens").value,
     montant: montant,
     date: date,
-    categorie: document.getElementById("choix-categorie").value
+    categorie: document.getElementById("choix-categorie").value,
+    note: document.getElementById("note-operation").value.trim().slice(0, 80)
   };
   if (operationEnEdition) {
     const op = etat.operations.find(o => o.id === operationEnEdition);
@@ -1114,6 +1126,7 @@ function ouvrirEdition(id) {
   document.getElementById("choix-sens").value = op.sens;
   remplirChoixCategories();
   document.getElementById("choix-categorie").value = op.categorie;
+  document.getElementById("note-operation").value = op.note || "";
   document.getElementById("bouton-ajouter").textContent = "Enregistrer la modification";
   document.getElementById("annuler-edition").hidden = false;
   document.getElementById("titre-edition").hidden = false;
@@ -1137,7 +1150,7 @@ function ligneOperation(op) {
   const signe = op.sens === "revenu" ? "+" : "−";
   return `
     <div class="op">
-      <div class="cliquable" data-edit="${op.id}">${nomCategorie(op.categorie)}<small>${op.date} · ${echapper(compte.nom)}</small></div>
+      <div class="cliquable" data-edit="${op.id}">${nomCategorie(op.categorie)}<small>${op.date} · ${echapper(compte.nom)}</small>${op.note ? `<small>${echapper(op.note)}</small>` : ""}</div>
       <span class="${op.sens} cliquable" data-edit="${op.id}">${signe} ${centimesVersEuros(op.montant)}</span>
       <button class="supprimer" data-id="${op.id}" data-type="op" aria-label="Supprimer">✕</button>
     </div>`;
@@ -1148,31 +1161,34 @@ function ligneVirement(v) {
   const vers = etat.comptes.find(c => c.id === v.versId);
   return `
     <div class="op">
-      <div>Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small></div>
+      <div>Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
       <span>${centimesVersEuros(v.montant)}</span>
       <button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>
     </div>`;
 }
 
+function entreesPour(portee) {
+  const entrees = [];
+  for (const op of etat.operations) {
+    if (porteeDuCompte(op.compteId) === portee) {
+      entrees.push({ type: "op", date: op.date, id: op.id, donnee: op });
+    }
+  }
+  for (const v of etat.virements) {
+    if (porteeDuCompte(v.depuisId) === portee || porteeDuCompte(v.versId) === portee) {
+      entrees.push({ type: "virement", date: v.date, id: v.id, donnee: v });
+    }
+  }
+  return entrees.sort((a, b) =>
+    b.date.localeCompare(a.date) || momentDe(b.id) - momentDe(a.id));
+}
+
 function afficherOperations() {
   for (const portee of ["perso", "commun"]) {
-    const zone = document.getElementById("liste-operations-" + portee);
-    const entrees = [];
-    for (const op of etat.operations) {
-      if (porteeDuCompte(op.compteId) === portee) {
-        entrees.push({ type: "op", date: op.date, id: op.id, donnee: op });
-      }
-    }
-    for (const v of etat.virements) {
-      if (porteeDuCompte(v.depuisId) === portee || porteeDuCompte(v.versId) === portee) {
-        entrees.push({ type: "virement", date: v.date, id: v.id, donnee: v });
-      }
-    }
-    entrees.sort((a, b) =>
-      b.date.localeCompare(a.date) || momentDe(b.id) - momentDe(a.id));
-    zone.innerHTML = entrees.slice(0, 15)
-      .map(e => e.type === "op" ? ligneOperation(e.donnee) : ligneVirement(e.donnee))
-      .join("");
+    document.getElementById("liste-operations-" + portee).innerHTML =
+      entreesPour(portee).slice(0, 15)
+        .map(e => e.type === "op" ? ligneOperation(e.donnee) : ligneVirement(e.donnee))
+        .join("");
   }
 }
 
@@ -1193,6 +1209,9 @@ function rafraichir() {
   afficherCarteBilan();
   afficherCategories();
   afficherPlans();
+  afficherRappels();
+  remplirFiltresMouvements();
+  afficherMouvements();
 }
 
 function supprimerOperation(e) {
@@ -1501,16 +1520,216 @@ function animerJauges() {
     c.style.strokeDasharray = c.dataset.trait + " " + c.dataset.circ;
   }
 }
-const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages"];
+const JOURS_RAPPEL_EXPORT = 30;
+const JOURS_RAPPEL_VALEUR = 35;
+
+function joursDepuis(dateTexte) {
+  return enJours(aujourdhui()) - enJours(dateTexte);
+}
+
+function dateDuMoment(ms) {
+  return new Date(ms).toLocaleDateString("sv-SE");
+}
+
+function premiereUtilisation() {
+  const moments = [];
+  for (const liste of [etat.comptes, etat.operations, etat.virements,
+                       etat.valorisations, etat.misesDeCote]) {
+    for (const x of liste) {
+      const m = momentDe(x.id);
+      if (m > 1e12) moments.push(m);
+    }
+  }
+  return moments.length > 0 ? dateDuMoment(Math.min(...moments)) : null;
+}
+
+function rappels() {
+  const liste = [];
+  const premiere = premiereUtilisation();
+  const dernier = etat.reglages.dernierExport;
+  if (premiere) {
+    if (!dernier) {
+      if (joursDepuis(premiere) >= 7) {
+        liste.push({ texte: "Tu n'as encore jamais exporté de sauvegarde.", action: "export" });
+      }
+    } else if (joursDepuis(dernier) >= JOURS_RAPPEL_EXPORT) {
+      liste.push({ texte: "Dernière sauvegarde : il y a " + joursDepuis(dernier) + " jours.", action: "export" });
+    }
+  }
+
+  const anciens = [];
+  for (const c of comptesActifs().filter(estPlacement)) {
+    let derniere = null;
+    for (const v of etat.valorisations) {
+      if (v.compteId === c.id && (!derniere || v.date > derniere)) derniere = v.date;
+    }
+    if (!derniere && momentDe(c.id) > 1e12) derniere = dateDuMoment(momentDe(c.id));
+    if (derniere && joursDepuis(derniere) >= JOURS_RAPPEL_VALEUR) {
+      anciens.push({ compte: c, jours: joursDepuis(derniere) });
+    }
+  }
+  if (anciens.length === 1) {
+    liste.push({
+      texte: "La valeur de « " + anciens[0].compte.nom + " » date de " + anciens[0].jours + " jours.",
+      action: "valorisation",
+      compteId: anciens[0].compte.id
+    });
+  } else if (anciens.length > 1) {
+    liste.push({
+      texte: "Valeurs à mettre à jour : "
+        + anciens.map(a => a.compte.nom + " (" + a.jours + " j)").join(", ") + ".",
+      action: "valorisation",
+      compteId: anciens[0].compte.id
+    });
+  }
+  return liste;
+}
+
+function afficherRappels() {
+  document.getElementById("carte-rappels").innerHTML = rappels().map(r => `
+    <div class="rappel">
+      <span>${echapper(r.texte)}</span>
+      <button type="button" class="lien-action" data-rappel="${r.action}"
+        data-compte="${echapper(r.compteId || "")}">
+        ${r.action === "export" ? "Exporter" : "Mettre à jour"}</button>
+    </div>`).join("");
+}
+
+document.getElementById("carte-rappels").addEventListener("click", (e) => {
+  const action = e.target.dataset.rappel;
+  if (action === "export") exporterSauvegarde();
+  if (action === "valorisation") {
+    afficherVue("placements");
+    const compteId = e.target.dataset.compte;
+    if (compteId) document.getElementById("valo-compte").value = compteId;
+  }
+});
+let mouvements = { portee: "perso", categorie: "", mois: "tous" };
+
+function moisAvecMouvements(portee) {
+  const mois = new Set([moisCourant()]);
+  for (const e of entreesPour(portee)) mois.add(e.date.slice(0, 7));
+  return [...mois].sort().reverse();
+}
+
+function texteRecherche(e) {
+  if (e.type === "op") {
+    const cat = etat.categories.find(c => c.id === e.donnee.categorie);
+    const compte = etat.comptes.find(c => c.id === e.donnee.compteId);
+    return normaliser((cat ? cat.nom : "") + " " + (compte ? compte.nom : "")
+      + " " + (e.donnee.note || ""));
+  }
+  const de = etat.comptes.find(c => c.id === e.donnee.depuisId);
+  const vers = etat.comptes.find(c => c.id === e.donnee.versId);
+  return normaliser("virement " + (de ? de.nom : "") + " " + (vers ? vers.nom : "")
+    + " " + (e.donnee.note || ""));
+}
+
+function remplirFiltresMouvements() {
+  const m = mouvements;
+  const selMois = document.getElementById("mouvements-mois");
+  selMois.innerHTML = moisAvecMouvements(m.portee)
+    .map(x => `<option value="${x}">${nomMois(x)}</option>`).join("")
+    + `<option value="tous">Tous les mois</option>`;
+  selMois.value = m.mois;
+  const selCat = document.getElementById("mouvements-categorie");
+  let html = `<option value="">Toutes les catégories</option>`
+    + `<option value="__virements">Virements seulement</option>`;
+  for (const c of etat.categories.filter(c => c.portee === m.portee || c.portee === "tous")) {
+    html += `<option value="${echapper(c.id)}">${echapper(c.nom)}${c.sens === "revenu" ? " (revenu)" : ""}</option>`;
+  }
+  selCat.innerHTML = html;
+  selCat.value = m.categorie;
+}
+
+function afficherMouvements() {
+  const m = mouvements;
+  const recherche = normaliser(document.getElementById("mouvements-recherche").value);
+  let entrees = entreesPour(m.portee);
+  if (m.mois !== "tous") entrees = entrees.filter(e => e.date.startsWith(m.mois));
+  if (m.categorie === "__virements") {
+    entrees = entrees.filter(e => e.type === "virement");
+  } else if (m.categorie) {
+    entrees = entrees.filter(e => e.type === "op" && e.donnee.categorie === m.categorie);
+  }
+  if (recherche) entrees = entrees.filter(e => texteRecherche(e).includes(recherche));
+
+  const ops = entrees.filter(e => e.type === "op").map(e => e.donnee);
+  const depenses = somme(ops.filter(o => o.sens === "depense"));
+  const revenus = somme(ops.filter(o => o.sens === "revenu"));
+  let resume = `<div class="mu">${entrees.length} mouvement${entrees.length > 1 ? "s" : ""}</div>`
+    + ligneMontant("Dépenses", depenses) + ligneMontant("Revenus", revenus);
+  const budget = (m.categorie && m.categorie !== "__virements" && m.mois !== "tous" && !recherche)
+    ? etat.budgets.find(b => b.portee === m.portee && b.categorie === m.categorie) : null;
+  if (budget) {
+    const ratio = depenses / budget.montant;
+    const pct = Math.min(100, Math.round(ratio * 100));
+    resume += `
+      <div class="ligne"><span>Plafond du mois</span><strong>${centimesVersEuros(budget.montant)}</strong></div>
+      <div class="jauge"><div class="jauge-remplie ${ratio >= SEUIL_ALERTE ? "alerte" : ""}" style="width:${pct}%"></div></div>`;
+  }
+  document.getElementById("mouvements-total").innerHTML = resume;
+
+  const zone = document.getElementById("liste-mouvements");
+  if (entrees.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucun mouvement.</div>`;
+    return;
+  }
+  zone.innerHTML = entrees.slice(0, 100)
+    .map(e => e.type === "op" ? ligneOperation(e.donnee) : ligneVirement(e.donnee))
+    .join("")
+    + (entrees.length > 100
+      ? `<div class="mu">100 premiers affichés sur ${entrees.length} : affine avec la recherche.</div>` : "");
+}
+
+function ouvrirMouvements(portee, categorie = "", mois = "tous") {
+  mouvements = { portee: portee, categorie: categorie, mois: mois };
+  document.getElementById("mouvements-recherche").value = "";
+  document.getElementById("titre-mouvements").textContent =
+    portee === "commun" ? "Mouvements du commun" : "Mes mouvements";
+  afficherVue("mouvements");
+  remplirFiltresMouvements();
+  afficherMouvements();
+}
+
+function cliquerBudget(e) {
+  if (e.target.closest("button")) return;
+  const carte = e.target.closest("[data-detail]");
+  if (!carte) return;
+  const [portee, categorie] = carte.dataset.detail.split(":");
+  ouvrirMouvements(portee, categorie, moisCourant());
+}
+
+document.addEventListener("click", (e) => {
+  const bouton = e.target.closest("[data-mouvements]");
+  if (bouton) ouvrirMouvements(bouton.dataset.mouvements, "", moisCourant());
+});
+document.getElementById("liste-budgets-perso").addEventListener("click", cliquerBudget);
+document.getElementById("liste-budgets-commun").addEventListener("click", cliquerBudget);
+document.getElementById("liste-mouvements").addEventListener("click", supprimerOperation);
+document.getElementById("liste-mouvements").addEventListener("click", cliquerEdition);
+document.getElementById("mouvements-mois").addEventListener("change", (e) => {
+  mouvements.mois = e.target.value;
+  afficherMouvements();
+});
+document.getElementById("mouvements-categorie").addEventListener("change", (e) => {
+  mouvements.categorie = e.target.value;
+  afficherMouvements();
+});
+document.getElementById("mouvements-recherche").addEventListener("input", afficherMouvements);
+document.getElementById("fermer-mouvements").addEventListener("click", () => afficherVue(vuePrecedente));
+
+const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages", "mouvements"];
 let vuePrecedente = "accueil";
 
 function afficherVue(nom) {
-  if (nom !== "reglages") vuePrecedente = nom;
+  if (nom !== "reglages" && nom !== "mouvements") vuePrecedente = nom;
   for (const v of VUES) {
     document.getElementById("vue-" + v).hidden = (v !== nom);
   }
+  const actif = nom === "mouvements" ? vuePrecedente : nom;
   for (const b of document.querySelectorAll(".barre button")) {
-    b.classList.toggle("actif", b.dataset.vue === nom);
+    b.classList.toggle("actif", b.dataset.vue === actif);
   }
   animerJauges();
   window.scrollTo(0, 0);
