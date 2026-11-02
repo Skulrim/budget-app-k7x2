@@ -32,6 +32,7 @@ const etat = {
   badges: [],
   bilansVus: [],
   plansEpargne: [],
+  recurrentes: [],
   virements: [],
   valorisations: []
 };
@@ -133,18 +134,15 @@ function calculerSolde(compteId) {
 
 function dessinerComptes(idZone, filtre) {
   const zone = document.getElementById(idZone);
-  zone.innerHTML = "";
-  for (const compte of comptesActifs().filter(filtre)) {
-    const solde = calculerSolde(compte.id);
-    zone.innerHTML += `
-      <div class="carte">
-        <div>
-          <span>${echapper(compte.nom)}</span>
-          ${estPlacement(compte) ? detailPlacement(compte) : ""}
-        </div>
-        <strong>${centimesVersEuros(solde)}</strong>
-      </div>`;
-  }
+  zone.innerHTML = comptesActifs().filter(filtre).map(compte => `
+    <div class="carte">
+      <i class="pastille">${iconeType(compte.type)}</i>
+      <div>
+        <span>${echapper(compte.nom)}</span>
+        ${estPlacement(compte) ? detailPlacement(compte) : ""}
+      </div>
+      <strong>${centimesVersEuros(calculerSolde(compte.id))}</strong>
+    </div>`).join("");
 }
 
 const ORDRE_TYPES = ["livret", "pea", "assurance-vie", "courant"];
@@ -194,6 +192,7 @@ function remplirChoixComptes() {
   }
   remplirChoixPlacements();
   remplirChoixPlan();
+  remplirChoixRecurrence();
 }
 
 function remplirChoixPlacements() {
@@ -267,7 +266,7 @@ function afficherBudgets() {
       zone.innerHTML += `
                 <div class="budget cliquable" data-detail="${b.portee}:${echapper(b.categorie)}">
           <div class="budget-ligne">
-            <span>${nomCategorie(b.categorie)}</span>
+            <span>${iconeCategorie(b.categorie)} ${nomCategorie(b.categorie)}</span>
             <span>${centimesVersEuros(depense)} / ${centimesVersEuros(b.montant)}
               <button class="supprimer" data-portee="${b.portee}" data-cat="${echapper(b.categorie)}"
                 aria-label="Retirer ce budget">✕</button></span>
@@ -421,7 +420,11 @@ function creerCategorie() {
     message.textContent = "« " + exacte.nom + " » existe déjà.";
     return;
   }
-  etat.categories.push({ id: creerIdCategorie(nom), nom: nom, sens: sens, portee: portee });
+    const icone = document.getElementById("categorie-icone").value.trim().slice(0, 12);
+  const nouvelle = { id: creerIdCategorie(nom), nom: nom, sens: sens, portee: portee };
+  if (icone) nouvelle.icone = icone;
+  etat.categories.push(nouvelle);
+  document.getElementById("categorie-icone").value = "";
   message.textContent = "Catégorie ajoutée";
   document.getElementById("categorie-nom").value = "";
   sauvegarder();
@@ -445,7 +448,7 @@ function afficherCategories() {
   }
   zone.innerHTML = triees.map(c => `
     <div class="op">
-      <div>${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
+      <div>${iconeCategorie(c.id)} ${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
       <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
     </div>`).join("");
 }
@@ -569,7 +572,7 @@ function afficherObjectifs() {
     zone.innerHTML += `
       <div class="budget">
         <div class="budget-ligne">
-          <span>${echapper(o.nom)}</span>
+          <span>🎯 ${echapper(o.nom)}</span>
           <span>${centimesVersEuros(mis)} / ${centimesVersEuros(o.cible)}
             <button class="supprimer" data-objectif="${o.id}"
               aria-label="Supprimer l'objectif">✕</button></span>
@@ -580,6 +583,9 @@ function afficherObjectifs() {
           : `<small class="mu">Il manque ${centimesVersEuros(o.cible - mis)}</small>`}
       </div>`;
     choix.innerHTML += `<option value="${o.id}">${echapper(o.nom)}</option>`;
+  }
+    if (etat.objectifs.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucun objectif. Crée-en un dans ⚙ Réglages, « Épargne : plans et objectifs ».</div>`;
   }
   if (memoire) choix.value = memoire;
 
@@ -668,7 +674,7 @@ function dessinerPlans(idZone, filtre) {
     return `
       <div class="budget">
         <div class="budget-ligne">
-          <span>${echapper(c.nom)}</span>
+          <span>${iconeType(c.type)} ${echapper(c.nom)}</span>
           <span>${centimesVersEuros(fait)} / ${centimesVersEuros(p.montant)}
             <button class="supprimer" data-plan="${p.id}" aria-label="Retirer ce plan">✕</button></span>
         </div>
@@ -988,8 +994,9 @@ function etatValide(e) {
       && ids.has(v.depuisId) && ids.has(v.versId))
     && (e.budgets || []).every(b => ["commun", "perso"].includes(b.portee)
       && montantOk(b.montant) && /^[a-z0-9-]+$/.test(b.categorie))
-    && (e.categories || []).every(c => /^[a-z0-9-]+$/.test(c.id)
-      && ["depense", "revenu"].includes(c.sens))
+        && (e.categories || []).every(c => /^[a-z0-9-]+$/.test(c.id)
+         && ["depense", "revenu"].includes(c.sens)
+         && (c.icone === undefined || (typeof c.icone === "string" && c.icone.length <= 12)))
     && (e.valorisations || []).every(v => idOk(v.id) && dateOk(v.date)
       && Number.isInteger(v.valeur) && ids.has(v.compteId))
       && (e.reglages === undefined || ([3, 4, 5, 6].includes(e.reglages.moisMatelas)
@@ -1003,7 +1010,13 @@ function etatValide(e) {
     && e.operations.every(o => o.note === undefined
          || (typeof o.note === "string" && o.note.length <= 80))
     && e.virements.every(v => v.note === undefined
-         || (typeof v.note === "string" && v.note.length <= 80));
+         || (typeof v.note === "string" && v.note.length <= 80))
+             && (e.recurrentes || []).every(r => idOk(r.id) && montantOk(r.montant)
+         && ["revenu", "depense"].includes(r.sens) && ids.has(r.compteId)
+         && Number.isInteger(r.jour) && r.jour >= 1 && r.jour <= 31
+         && /^\d{4}-\d{2}$/.test(r.debut) && /^[a-z0-9-]+$/.test(r.categorie)
+         && Array.isArray(r.traites) && r.traites.every(m => /^\d{4}-\d{2}$/.test(m))
+         && (r.note === undefined || (typeof r.note === "string" && r.note.length <= 80)));
 }
 
 function exporterSauvegarde() {
@@ -1029,7 +1042,7 @@ function importerSauvegarde(fichier) {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
       if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [] }, donnees.etat);
+      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [] }, donnees.etat);
       sauvegarder();
       remplirChoixComptes();
       remplirChoixCategories();
@@ -1054,6 +1067,7 @@ function dateValide(texte) {
 }
 
 function preparerSaisie() {
+  recurrenceEnValidation = null;
   operationEnEdition = null;
   for (const id of ["date-operation", "date-virement"]) {
     const champ = document.getElementById(id);
@@ -1068,6 +1082,7 @@ function preparerSaisie() {
   document.getElementById("annuler-edition").hidden = true;
   document.getElementById("titre-edition").hidden = true;
   document.querySelector(".bascule").hidden = false;
+  document.getElementById("titre-edition").textContent = "Modifier l'opération";
 }
 
 function ajouterOperation() {
@@ -1102,6 +1117,11 @@ function ajouterOperation() {
   } else {
     etat.operations.push({ id: "o" + Date.now(), ...champs });
   }
+    if (recurrenceEnValidation) {
+    const r = etat.recurrentes.find(x => x.id === recurrenceEnValidation.id);
+    if (r && !r.traites.includes(recurrenceEnValidation.mois)) r.traites.push(recurrenceEnValidation.mois);
+  }
+  recurrenceEnValidation = null;
   operationEnEdition = null;
   document.getElementById("montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
@@ -1150,6 +1170,7 @@ function ligneOperation(op) {
   const signe = op.sens === "revenu" ? "+" : "−";
   return `
     <div class="op">
+      <i class="pastille cliquable" data-edit="${op.id}">${iconeCategorie(op.categorie)}</i>
       <div class="cliquable" data-edit="${op.id}">${nomCategorie(op.categorie)}<small>${op.date} · ${echapper(compte.nom)}</small>${op.note ? `<small>${echapper(op.note)}</small>` : ""}</div>
       <span class="${op.sens} cliquable" data-edit="${op.id}">${signe} ${centimesVersEuros(op.montant)}</span>
       <button class="supprimer" data-id="${op.id}" data-type="op" aria-label="Supprimer">✕</button>
@@ -1161,6 +1182,7 @@ function ligneVirement(v) {
   const vers = etat.comptes.find(c => c.id === v.versId);
   return `
     <div class="op">
+      <i class="pastille">↔️</i>
       <div>Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
       <span>${centimesVersEuros(v.montant)}</span>
       <button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>
@@ -1212,6 +1234,11 @@ function rafraichir() {
   afficherRappels();
   remplirFiltresMouvements();
   afficherMouvements();
+  afficherAValider();
+  afficherRecurrentes();
+  remplirChoixCategoriesRec();
+  afficherAnneaux();
+  afficherCourbeEpargne();
 }
 
 function supprimerOperation(e) {
@@ -1719,6 +1746,381 @@ document.getElementById("mouvements-categorie").addEventListener("change", (e) =
 document.getElementById("mouvements-recherche").addEventListener("input", afficherMouvements);
 document.getElementById("fermer-mouvements").addEventListener("click", () => afficherVue(vuePrecedente));
 
+let recurrenceEnValidation = null;
+
+function dernierJourDuMois(mois) {
+  const [a, m] = mois.split("-").map(Number);
+  return new Date(a, m, 0).getDate();
+}
+
+function dateEcheance(mois, jour) {
+  const j = Math.min(jour, dernierJourDuMois(mois));
+  return mois + "-" + String(j).padStart(2, "0");
+}
+
+function moisEntre(debut, fin) {
+  const liste = [];
+  let [a, m] = debut.split("-").map(Number);
+  const [af, mf] = fin.split("-").map(Number);
+  while (a < af || (a === af && m <= mf)) {
+    liste.push(a + "-" + String(m).padStart(2, "0"));
+    m++;
+    if (m > 12) { m = 1; a++; }
+  }
+  return liste;
+}
+
+function aValider() {
+  const liste = [];
+  for (const r of etat.recurrentes) {
+    const compte = etat.comptes.find(c => c.id === r.compteId);
+    if (!compte || compte.archive) continue;
+    for (const mois of moisEntre(r.debut, moisCourant())) {
+      if (r.traites.includes(mois)) continue;
+      const date = dateEcheance(mois, r.jour);
+      if (date <= aujourdhui()) liste.push({ r: r, mois: mois, date: date });
+    }
+  }
+  return liste.sort((x, y) => x.date.localeCompare(y.date));
+}
+
+function afficherAValider() {
+  const zone = document.getElementById("carte-a-valider");
+  const items = aValider();
+  if (items.length === 0) {
+    zone.innerHTML = "";
+    return;
+  }
+  zone.innerHTML = `<h2>À valider</h2>` + items.map(({ r, mois, date }) => {
+    const signe = r.sens === "revenu" ? "+" : "−";
+    const boutons = ["valider", "modifier", "passer"].map(act => `
+      <button type="button" class="lien-action" data-rec="${r.id}" data-mois="${mois}" data-act="${act}">
+        ${act === "valider" ? "Valider" : act === "modifier" ? "Modifier" : "Passer"}</button>`).join("");
+    return `
+      <div class="budget">
+        <div class="budget-ligne">
+          <span>${iconeCategorie(r.categorie)} ${nomCategorie(r.categorie)}${r.note ?" · " + echapper(r.note) : ""}</span>
+          <span>${signe} ${centimesVersEuros(r.montant)}</span>
+        </div>
+        <small class="mu">Prévu le ${date}</small>
+        <div class="actions-rec">${boutons}</div>
+      </div>`;
+  }).join("");
+}
+
+function ouvrirRecurrence(r, mois) {
+  const choixCompte = document.getElementById("choix-compte");
+  choixCompte.value = r.compteId;
+  if (choixCompte.value !== r.compteId) return;
+  preparerSaisie();
+  recurrenceEnValidation = { id: r.id, mois: mois };
+  afficherFormulaire("operation");
+  document.getElementById("montant").value = (r.montant / 100).toFixed(2).replace(".", ",");
+  document.getElementById("date-operation").value = dateEcheance(mois, r.jour);
+  document.getElementById("choix-sens").value = r.sens;
+  remplirChoixCategories();
+  document.getElementById("choix-categorie").value = r.categorie;
+  document.getElementById("note-operation").value = r.note || "";
+  document.getElementById("bouton-ajouter").textContent = "Valider";
+  document.getElementById("titre-edition").textContent = "Valider l'opération prévue";
+  document.getElementById("titre-edition").hidden = false;
+  document.getElementById("annuler-edition").hidden = false;
+  document.querySelector(".bascule").hidden = true;
+  document.getElementById("panneau-saisie").hidden = false;
+}
+
+document.getElementById("carte-a-valider").addEventListener("click", (e) => {
+  const id = e.target.dataset.rec;
+  if (!id) return;
+  const r = etat.recurrentes.find(x => x.id === id);
+  const mois = e.target.dataset.mois;
+  if (!r || r.traites.includes(mois)) return;
+  const act = e.target.dataset.act;
+  if (act === "modifier") {
+    ouvrirRecurrence(r, mois);
+    return;
+  }
+  if (act === "valider") {
+    etat.operations.push({
+      id: "o" + Date.now(), compteId: r.compteId, sens: r.sens, montant: r.montant,
+      date: dateEcheance(mois, r.jour), categorie: r.categorie, note: r.note || ""
+    });
+  }
+  r.traites.push(mois);
+  sauvegarder();
+  rafraichir();
+});
+
+function remplirChoixRecurrence() {
+  const choix = document.getElementById("rec-compte");
+  const memoire = choix.value;
+  choix.innerHTML = comptesActifs().filter(c => !estPlacement(c))
+    .map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join("");
+  if (memoire) choix.value = memoire;
+  remplirChoixCategoriesRec();
+}
+
+function remplirChoixCategoriesRec() {
+  const compteId = document.getElementById("rec-compte").value;
+  const sens = document.getElementById("rec-sens").value;
+  const choix = document.getElementById("rec-categorie");
+  const memoire = choix.value;
+  choix.innerHTML = compteId
+    ? categoriesPour(compteId, sens)
+        .map(c => `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`).join("")
+    : "";
+  if (memoire) choix.value = memoire;
+}
+
+function enregistrerRecurrence() {
+  const compteId = document.getElementById("rec-compte").value;
+  const sens = document.getElementById("rec-sens").value;
+  const categorie = document.getElementById("rec-categorie").value;
+  const montant = eurosVersCentimes(document.getElementById("rec-montant").value);
+  const jour = Number(document.getElementById("rec-jour").value);
+  const message = document.getElementById("message-recurrence");
+  if (!compteId || !categorie) {
+    message.textContent = "Choisis un compte et une catégorie";
+    return;
+  }
+  if (isNaN(montant) || montant <= 0) {
+    message.textContent = "Montant invalide";
+    return;
+  }
+  if (!Number.isInteger(jour) || jour < 1 || jour > 31) {
+    message.textContent = "Le jour doit être entre 1 et 31";
+    return;
+  }
+  etat.recurrentes.push({
+    id: "r" + Date.now(), compteId: compteId, sens: sens, categorie: categorie,
+    montant: montant, jour: jour,
+    note: document.getElementById("rec-note").value.trim().slice(0, 80),
+    debut: document.getElementById("rec-debut").value === "suivant" ? moisDecale(1) : moisCourant(),
+    traites: []
+  });
+  message.textContent = "Opération récurrente ajoutée";
+  document.getElementById("rec-montant").value = "";
+  document.getElementById("rec-jour").value = "";
+  document.getElementById("rec-note").value = "";
+  sauvegarder();
+  rafraichir();
+}
+
+function afficherRecurrentes() {
+  const zone = document.getElementById("liste-recurrentes");
+  if (etat.recurrentes.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucune opération récurrente.</div>`;
+    return;
+  }
+  zone.innerHTML = etat.recurrentes.map(r => {
+    const compte = etat.comptes.find(c => c.id === r.compteId);
+    const signe = r.sens === "revenu" ? "+" : "−";
+    return `
+      <div class="op">
+        <div>${nomCategorie(r.categorie)}<small>Le ${r.jour} de chaque mois · ${compte ? echapper(compte.nom) : "?"}</small>${r.note ? `<small>${echapper(r.note)}</small>` : ""}</div>
+        <span>${signe} ${centimesVersEuros(r.montant)}</span>
+        <button class="supprimer" data-rec-supp="${r.id}" aria-label="Supprimer">✕</button>
+      </div>`;
+  }).join("");
+}
+
+document.getElementById("liste-recurrentes").addEventListener("click", (e) => {
+  const id = e.target.dataset.recSupp;
+  if (!id) return;
+  if (!confirm("Supprimer cette opération récurrente ? Les opérations déjà créées sont conservées.")) return;
+  etat.recurrentes = etat.recurrentes.filter(r => r.id !== id);
+  sauvegarder();
+  rafraichir();
+});
+
+document.getElementById("bouton-recurrence").addEventListener("click", enregistrerRecurrence);
+document.getElementById("rec-compte").addEventListener("change", remplirChoixCategoriesRec);
+document.getElementById("rec-sens").addEventListener("change", remplirChoixCategoriesRec);
+const ICONES_DEFAUT = {
+  "logement": "🏠", "courses": "🛒", "electricite": "⚡", "eau": "💧", "internet": "📶",
+  "assurances": "🛡️", "sante": "🩺", "animaux": "🐾", "sorties": "🎉",
+  "carburant": "⛽", "telephone": "📱", "assurance-voiture": "🚗", "loisirs": "🎮",
+  "anniversaires": "🎁", "restaurants": "🍽️", "abonnements": "🔁", "autre": "🏷️",
+  "salaire": "💼", "primes": "🎯", "remboursements": "↩️", "revente": "🔄", "autre-revenu": "💶"
+};
+const ICONES_TYPES = { "courant": "💳", "livret": "🐷", "pea": "📈", "assurance-vie": "🛡️" };
+
+function iconeCategorie(id) {
+  const cat = etat.categories.find(c => c.id === id);
+  return echapper((cat && cat.icone) || ICONES_DEFAUT[id] || "🏷️");
+}
+
+function iconeType(type) {
+  return ICONES_TYPES[type] || "💰";
+}
+
+function eurosRonds(centimes) {
+  return (centimes / 100).toLocaleString("fr-FR",
+    { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+}
+
+function moisCourt(mois) {
+  const [a, m] = mois.split("-").map(Number);
+  return new Date(a, m - 1, 1).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+}
+
+/* ----- Anneau des dépenses ----- */
+function depensesParCategorie(portee, mois = moisCourant()) {
+  const totaux = {};
+  for (const op of etat.operations) {
+    if (op.sens !== "depense" || !op.date.startsWith(mois)) continue;
+    if (porteeDuCompte(op.compteId) !== portee) continue;
+    totaux[op.categorie] = (totaux[op.categorie] || 0) + op.montant;
+  }
+  return Object.entries(totaux)
+    .map(([categorie, montant]) => ({ categorie: categorie, montant: montant }))
+    .sort((a, b) => b.montant - a.montant);
+}
+
+function afficherAnneaux() {
+  for (const portee of ["perso", "commun"]) {
+    const zone = document.getElementById("graphique-" + portee);
+    const lignes = depensesParCategorie(portee);
+    const total = lignes.reduce((s, l) => s + l.montant, 0);
+    if (total === 0) {
+      zone.innerHTML = `<div class="mu">Pas encore de dépense ce mois-ci.</div>`;
+      continue;
+    }
+    const parts = lignes.slice(0, 5).map(l => ({ ...l }));
+    const reste = lignes.slice(5).reduce((s, l) => s + l.montant, 0);
+    if (reste > 0) parts.push({ categorie: null, montant: reste });
+
+    const R = 40;
+    const C = 2 * Math.PI * R;
+    let cumul = 0;
+    let cercles = `<circle class="fond" cx="50" cy="50" r="${R}" fill="none" stroke-width="14"/>`;
+    parts.forEach((p, i) => {
+      const longueur = p.montant / total * C;
+      const num = p.categorie === null ? 6 : i + 1;
+      cercles += `<circle class="seg seg${num}" cx="50" cy="50" r="${R}" fill="none"
+        stroke-width="14" stroke-dasharray="${longueur} ${C}" stroke-dashoffset="${-cumul}"
+        data-trait="${longueur}" data-circ="${C}"/>`;
+      cumul += longueur;
+    });
+
+    const legende = parts.map((p, i) => {
+      const num = p.categorie === null ? 6 : i + 1;
+      const pct = Math.round(p.montant / total * 100);
+      const nom = p.categorie === null
+        ? "Autres" : `${iconeCategorie(p.categorie)} ${nomCategorie(p.categorie)}`;
+      const attr = p.categorie === null
+        ? "" : ` cliquable" data-detail="${portee}:${echapper(p.categorie)}`;
+      return `
+        <div class="legende-ligne${attr}">
+          <i class="point pt${num}"></i><span>${nom}</span>
+          <span class="mu-droite">${pct} %</span>
+          <strong>${centimesVersEuros(p.montant)}</strong>
+        </div>`;
+    }).join("");
+
+    zone.innerHTML = `
+      <div class="donut-graph">
+        <svg viewBox="0 0 100 100" aria-hidden="true">${cercles}</svg>
+        <div class="donut-centre"><small>Dépensé</small><b>${eurosRonds(total)}</b></div>
+      </div>
+      <div class="legende">${legende}</div>`;
+  }
+}
+
+/* ----- Courbe de l'épargne ----- */
+function soldeAu(compte, date) {
+  let solde = compte.soldeDepart;
+  if (estPlacement(compte)) {
+    let ref = null;
+    for (const v of etat.valorisations) {
+      if (v.compteId !== compte.id || v.date > date) continue;
+      if (!ref || v.date > ref.date
+          || (v.date === ref.date && momentDe(v.id) > momentDe(ref.id))) ref = v;
+    }
+    if (ref) solde = ref.valeur;
+    for (const v of etat.virements) {
+      if (v.date > date || (ref && v.date <= ref.date)) continue;
+      if (v.versId === compte.id) solde += v.montant;
+      if (v.depuisId === compte.id) solde -= v.montant;
+    }
+    return solde;
+  }
+  for (const op of etat.operations) {
+    if (op.compteId !== compte.id || op.date > date) continue;
+    solde += op.sens === "revenu" ? op.montant : -op.montant;
+  }
+  for (const v of etat.virements) {
+    if (v.date > date) continue;
+    if (v.versId === compte.id) solde += v.montant;
+    if (v.depuisId === compte.id) solde -= v.montant;
+  }
+  return solde;
+}
+
+function debutHistorique() {
+  const dates = toutesLesDates();
+  for (const c of etat.comptes) {
+    if (momentDe(c.id) > 1e12) dates.push(dateDuMoment(momentDe(c.id)));
+  }
+  return dates.length > 0 ? dates.sort()[0].slice(0, 7) : null;
+}
+
+function serieEpargne() {
+  const debut = debutHistorique();
+  if (!debut) return [];
+  return moisEntre(debut, moisCourant()).slice(-12).map(m => {
+    if (m === moisCourant()) {
+      return { mois: m, valeur: totalPar(c => c.type !== "courant") };
+    }
+    const date = m + "-" + String(dernierJourDuMois(m)).padStart(2, "0");
+    let total = 0;
+    for (const c of etat.comptes) {
+      if (c.type !== "courant") total += soldeAu(c, date);
+    }
+    return { mois: m, valeur: total };
+  });
+}
+
+function afficherCourbeEpargne() {
+  const zone = document.getElementById("graphique-epargne");
+  const serie = serieEpargne();
+  if (serie.length < 2) {
+    zone.innerHTML = `<div class="mu">La courbe apparaîtra dès que tu auras deux mois d'historique.</div>`;
+    return;
+  }
+  const L = 300, H = 110, marge = 8;
+  const valeurs = serie.map(p => p.valeur);
+  let min = Math.min(...valeurs);
+  let max = Math.max(...valeurs);
+  const ecart = (max - min) || Math.max(1, Math.abs(max) * 0.1);
+  min -= ecart * 0.15;
+  max += ecart * 0.15;
+  const x = i => marge + i * (L - 2 * marge) / (serie.length - 1);
+  const y = v => H - marge - (v - min) / (max - min) * (H - 2 * marge);
+  const points = serie.map((p, i) => x(i).toFixed(1) + "," + y(p.valeur).toFixed(1));
+  const ligne = "M" + points.join(" L");
+  const aire = ligne + " L" + x(serie.length - 1).toFixed(1) + "," + H
+    + " L" + x(0).toFixed(1) + "," + H + " Z";
+  const cercles = serie.map((p, i) =>
+    `<circle class="courbe-point" cx="${x(i).toFixed(1)}" cy="${y(p.valeur).toFixed(1)}" r="3"/>`).join("");
+  const premier = serie[0];
+  const dernier = serie[serie.length - 1];
+  const delta = dernier.valeur - premier.valeur;
+  const signe = delta >= 0 ? "+" : "−";
+  zone.innerHTML = `
+    <div class="mu">Épargne et placements</div>
+    <div class="moyen">${centimesVersEuros(dernier.valeur)}</div>
+    <div class="mu">${signe} ${centimesVersEuros(Math.abs(delta))} depuis ${moisCourt(premier.mois)} (versements inclus)</div>
+    <svg class="courbe" viewBox="0 0 ${L} ${H}" role="img" aria-label="Évolution de l'épargne">
+      <path class="courbe-aire" d="${aire}"/>
+      <path class="courbe-ligne" pathLength="1" d="${ligne}"/>
+      ${cercles}
+    </svg>
+    <div class="courbe-axe"><span>${moisCourt(premier.mois)}</span><span>${moisCourt(dernier.mois)}</span></div>`;
+}
+
+document.getElementById("graphique-perso").addEventListener("click", cliquerBudget);
+document.getElementById("graphique-commun").addEventListener("click", cliquerBudget);
 const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages", "mouvements"];
 let vuePrecedente = "accueil";
 

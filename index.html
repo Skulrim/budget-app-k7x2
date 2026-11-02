@@ -22,7 +22,10 @@
   <main>
     <section id="vue-accueil" class="vue">
       <section id="carte-rappels"></section>
+      <section id="carte-a-valider"></section>
       <section id="carte-patrimoine" class="patrimoine"></section>
+      <h2>Évolution de l'épargne</h2>
+<section id="graphique-epargne" class="patrimoine"></section>
       <section id="carte-reste" class="hero"></section>
       <section id="carte-series" class="patrimoine"></section>
       <section id="carte-bilan" class="patrimoine"></section>
@@ -35,6 +38,8 @@
     <section id="vue-perso" class="vue" hidden>
       <h2>Mes comptes courants</h2>
       <section id="liste-comptes-perso"></section>
+      <h2>Où part l'argent ce mois-ci</h2>
+<section id="graphique-perso" class="patrimoine"></section>
       <h2>Budgets du mois</h2>
       <section id="liste-budgets-perso"></section>
       <h2>Derniers mouvements</h2>
@@ -45,6 +50,8 @@
     <section id="vue-commun" class="vue" hidden>
       <h2>Compte commun</h2>
       <section id="liste-comptes-commun"></section>
+      <h2>Où part l'argent ce mois-ci</h2>
+<section id="graphique-commun" class="patrimoine"></section>
       <h2>Budgets du mois</h2>
       <section id="liste-budgets-commun"></section>
       <h2>Derniers mouvements</h2>
@@ -78,12 +85,7 @@
 </div>
 <h2>Dernières mises de côté</h2>
 <section id="liste-mises"></section>
-<h2>Nouvel objectif</h2>
-<div class="saisie">
-  <input id="objectif-nom" type="text" maxlength="40" placeholder="Nom (ex : Voyage, Nouvel écran)">
-  <input id="objectif-cible" type="text" inputmode="decimal" placeholder="Montant à atteindre (ex : 800)">
-  <button id="bouton-objectif-creer" type="button">Créer l'objectif</button>
-  <p id="message-objectif"></p>
+
 </div>
     </section>
 
@@ -160,6 +162,7 @@
     <h3>Ajouter une catégorie</h3>
     <div class="saisie">
       <input id="categorie-nom" type="text" maxlength="40" placeholder="Nom (ex : Netflix)">
+      <input id="categorie-icone" type="text" maxlength="12" placeholder="Icône (un emoji, facultatif)">
       <select id="categorie-sens">
         <option value="depense">Dépense</option>
         <option value="revenu">Revenu</option>
@@ -179,14 +182,47 @@
       <p id="message-categorie-liste" class="mu"></p>
     </details>
   </details>
-  <details class="repliable">
-  <summary>Plans d'épargne</summary>
-  <h3>Ajouter ou modifier un plan</h3>
+<details class="repliable">
+  <summary>Épargne : plans et objectifs</summary>
+  <h3>Plan d'épargne mensuel</h3>
   <div class="saisie">
     <select id="plan-compte"></select>
     <input id="plan-montant" type="text" inputmode="decimal" placeholder="Montant à verser par mois (ex : 200)">
     <button id="bouton-plan" type="button">Enregistrer le plan</button>
     <p id="message-plan"></p>
+  </div>
+  <h3>Nouvel objectif d'achat</h3>
+  <div class="saisie">
+    <input id="objectif-nom" type="text" maxlength="40" placeholder="Nom (ex : Voyage, Nouvel écran)">
+    <input id="objectif-cible" type="text" inputmode="decimal" placeholder="Montant à atteindre (ex : 800)">
+    <button id="bouton-objectif-creer" type="button">Créer l'objectif</button>
+    <p id="message-objectif"></p>
+  </div>
+</details>
+
+<details class="repliable">
+  <summary>Opérations récurrentes</summary>
+  <h3>Nouvelle opération récurrente</h3>
+  <div class="saisie">
+    <select id="rec-compte"></select>
+    <select id="rec-sens">
+      <option value="depense">Dépense</option>
+      <option value="revenu">Revenu</option>
+    </select>
+    <select id="rec-categorie"></select>
+    <input id="rec-montant" type="text" inputmode="decimal" placeholder="Montant habituel (ex : 15,99)">
+    <input id="rec-jour" type="number" min="1" max="31" inputmode="numeric" placeholder="Jour du mois (1 à 31)">
+    <input id="rec-note" type="text" maxlength="80" placeholder="Note (facultative)">
+    <select id="rec-debut">
+      <option value="courant">À partir de ce mois-ci</option>
+      <option value="suivant">À partir du mois prochain</option>
+    </select>
+    <button id="bouton-recurrence" type="button">Enregistrer</button>
+    <p id="message-recurrence"></p>
+  </div>
+  <h3>Mes opérations récurrentes</h3>
+  <section id="liste-recurrentes"></section>
+</details>
   </div>
 </details>
 
