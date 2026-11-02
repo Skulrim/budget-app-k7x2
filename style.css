@@ -260,3 +260,51 @@ h2 {
 @keyframes dessin { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .courbe-point { fill: var(--carte); stroke: var(--accent); stroke-width: 2; }
 .courbe-axe { display: flex; justify-content: space-between; font-size: 12px; color: var(--discret); }
+/* ===== Thèmes ===== */
+:root {
+  color-scheme: light;
+  --texte-sur-accent: #ffffff;
+  --anneau-piste: #86a3ff;
+  --anneau-trait: #ffffff;
+  --epaisseur: 1px;
+}
+
+:root[data-theme="sombre"] {
+  color-scheme: dark;
+  --fond: #12121f; --carte: #1c1c30; --bord: #34345a; --piste: #2c2c48;
+  --texte: #f0f0ff; --discret: #9a9abd;
+  --accent: #00e5c3; --accent-fonce: #00e5c3; --accent-clair: #24243e;
+  --accent-texte: #00e5c3; --sur-accent: #0f4a42; --texte-sur-accent: #0b0b16;
+  --anneau-piste: #5bf0d9; --anneau-trait: #0b0b16;
+  --alerte: #ff4d8d; --alerte-texte: #ff8ab5; --ombre: none;
+  --s1: #00e5c3; --s2: #b18cff; --s3: #ffc15e; --s4: #6ea8ff; --s5: #7be0a0; --s6: #8e8eb0;
+}
+
+:root[data-theme="pastel"] {
+  --fond: #fdf6f0; --carte: #ffffff; --bord: #eadfe8; --piste: #efe6f3;
+  --texte: #4a3f55; --discret: #8f8499;
+  --accent: #8575d6; --accent-fonce: #6657c4; --accent-clair: #f1ecfb;
+  --accent-texte: #6657c4; --sur-accent: #efeaff; --texte-sur-accent: #ffffff;
+  --anneau-piste: #b9aef0; --anneau-trait: #ffffff;
+  --alerte: #f08a5d; --alerte-texte: #b4512a; --rayon: 18px;
+  --s1: #8575d6; --s2: #6cc3a8; --s3: #e6c26a; --s4: #7fb2e8; --s5: #d59be0; --s6: #b5aec0;
+}
+
+:root[data-theme="ludique"] {
+  --fond: #ffe9a8; --carte: #ffffff; --bord: #2b2250; --piste: #f1e6c0;
+  --texte: #2b2250; --discret: #6b6190;
+  --accent: #3d7bff; --accent-fonce: #2f5fd0; --accent-clair: #dbe7ff;
+  --accent-texte: #2f5fd0; --sur-accent: #dbe7ff; --texte-sur-accent: #ffffff;
+  --anneau-piste: #86a8ff; --anneau-trait: #ffffff;
+  --alerte: #ff6b4a; --alerte-texte: #c23a1c; --rayon: 18px; --epaisseur: 2px; --ombre: none;
+  --s1: #3d7bff; --s2: #2ec27e; --s3: #ffc933; --s4: #8a63d2; --s5: #3fc1e0; --s6: #6b6190;
+}
+
+/* Règles qui utilisaient du blanc ou des couleurs fixes */
+.hero, .saisie button, .bascule button.actif, #bouton-plus, #notif {
+  color: var(--texte-sur-accent);
+}
+.anneau .piste { stroke: var(--anneau-piste); }
+.anneau .trait { stroke: var(--anneau-trait); }
+.carte, .budget, .patrimoine, .badge { border-width: var(--epaisseur); }
+#bouton-plus { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }

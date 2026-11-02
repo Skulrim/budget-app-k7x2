@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mon budget</title>
+  <script>
+  try {
+    var t = localStorage.getItem("budget-theme");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" href="icon-192.png">
@@ -223,6 +229,17 @@
   <h3>Mes opérations récurrentes</h3>
   <section id="liste-recurrentes"></section>
 </details>
+  </div>
+</details>
+<details class="repliable">
+  <summary>Apparence</summary>
+  <div class="saisie">
+    <select id="choix-theme">
+      <option value="bleu-rose">Bleu et rose</option>
+      <option value="sombre">Sombre</option>
+      <option value="pastel">Pastel</option>
+      <option value="ludique">Coloré</option>
+    </select>
   </div>
 </details>
 

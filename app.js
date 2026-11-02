@@ -313,8 +313,10 @@ function afficherReste() {
   document.getElementById("carte-reste").innerHTML = `
     <div class="anneau">
       <svg width="96" height="96" viewBox="0 0 96 96">
-        <circle cx="48" cy="48" r="40" fill="none" stroke="#86a3ff" stroke-width="9"/>
-         <circle cx="48" cy="48" r="40" fill="none" stroke="#ffffff" stroke-width="9"
+        <circle class="piste" cx="48" cy="48" r="40" fill="none" stroke-width="9"/>
+        <circle class="trait" cx="48" cy="48" r="40" fill="none" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
+          data-trait="${trait}" data-circ="${circonference}"/>
           stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
           data-trait="${trait}" data-circ="${circonference}"/>
       </svg>
@@ -2136,6 +2138,24 @@ function afficherCourbeEpargne() {
 
 document.getElementById("graphique-perso").addEventListener("click", cliquerBudget);
 document.getElementById("graphique-commun").addEventListener("click", cliquerBudget);
+const CLE_THEME = "budget-theme";
+const NOMS_THEMES = ["bleu-rose", "sombre", "pastel", "ludique"];
+
+function themeEnregistre() {
+  try { return localStorage.getItem(CLE_THEME) || "bleu-rose"; }
+  catch (e) { return "bleu-rose"; }
+}
+
+function appliquerTheme(nom) {
+  if (!NOMS_THEMES.includes(nom)) nom = "bleu-rose";
+  document.documentElement.setAttribute("data-theme", nom);
+  try { localStorage.setItem(CLE_THEME, nom); } catch (e) {}
+  const fond = getComputedStyle(document.documentElement).getPropertyValue("--fond").trim();
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", fond);
+  document.getElementById("choix-theme").value = nom;
+}
+
+document.getElementById("choix-theme").addEventListener("change", (e) => appliquerTheme(e.target.value));
 const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages", "mouvements"];
 let vuePrecedente = "accueil";
 
@@ -2181,6 +2201,7 @@ document.getElementById("bouton-ajouter").addEventListener("click", ajouterOpera
 document.getElementById("bouton-virement").addEventListener("click", ajouterVirement);
 document.getElementById("liste-operations-perso").addEventListener("click", supprimerOperation);
 document.getElementById("liste-operations-commun").addEventListener("click", supprimerOperation);
+appliquerTheme(themeEnregistre());
 charger();
 remplirChoixComptes();
 remplirChoixCategories();
