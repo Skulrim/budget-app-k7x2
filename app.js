@@ -291,6 +291,21 @@ function afficherReste() {
     prevu += b.montant;
     depense += depenseDuMois(b.portee, b.categorie);
   }
+    const budgetes = new Set(etat.budgets.map(b => b.portee + ":" + b.categorie));
+  const comptees = new Set();
+  for (const r of etat.recurrentes) {
+    if (r.sens !== "depense" || r.debut > moisCourant()) continue;
+    const compte = etat.comptes.find(c => c.id === r.compteId);
+    if (!compte || compte.archive) continue;
+    const portee = porteeDuCompte(r.compteId);
+    const cle = portee + ":" + r.categorie;
+    if (budgetes.has(cle)) continue;
+    prevu += r.montant;
+    if (!comptees.has(cle)) {
+      comptees.add(cle);
+      depense += depenseDuMois(portee, r.categorie);
+    }
+  }
   const reste = prevu - depense;
   const ratio = prevu > 0 ? Math.min(1, depense / prevu) : 0;
   const circonference = 2 * Math.PI * 40;
