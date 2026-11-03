@@ -881,18 +881,49 @@ function ajouterVirement() {
     return;
   }
   message.textContent = "";
-  etat.virements.push({
-    id: "v" + Date.now(),
+  const champs = {
     depuisId: depuis,
     versId: vers,
     montant: montant,
     date: date,
     note: document.getElementById("note-virement").value.trim().slice(0, 80)
-  });
+  };
+  if (virementEnEdition) {
+    const v = etat.virements.find(x => x.id === virementEnEdition);
+    if (v) Object.assign(v, champs);
+  } else {
+    etat.virements.push({ id: "v" + Date.now(), ...champs });
+  }
+  marquerRecurrenceTraitee();
+  virementEnEdition = null;
   document.getElementById("virement-montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
   sauvegarder();
   rafraichir();
+}
+function ouvrirEditionVirement(id) {
+  const v = etat.virements.find(x => x.id === id);
+  if (!v) return;
+  const depuis = document.getElementById("virement-depuis");
+  const vers = document.getElementById("virement-vers");
+  depuis.value = v.depuisId;
+  vers.value = v.versId;
+  if (depuis.value !== v.depuisId || vers.value !== v.versId) {
+    montrerNotif("Un des comptes est archivé : réactive-le pour modifier ce virement.");
+    return;
+  }
+  preparerSaisie();
+  virementEnEdition = id;
+  afficherFormulaire("virement");
+  document.getElementById("virement-montant").value = (v.montant / 100).toFixed(2).replace(".", ",");
+  document.getElementById("date-virement").value = v.date;
+  document.getElementById("note-virement").value = v.note || "";
+  document.getElementById("bouton-virement").textContent = "Enregistrer la modification";
+  document.getElementById("titre-edition").textContent = "Modifier le virement";
+  document.getElementById("titre-edition").hidden = false;
+  document.getElementById("annuler-edition").hidden = false;
+  document.querySelector(".bascule").hidden = true;
+  document.getElementById("panneau-saisie").hidden = false;
 }
 
 function majChampVerse() {
@@ -1028,12 +1059,15 @@ function etatValide(e) {
          || (typeof o.note === "string" && o.note.length <= 80))
     && e.virements.every(v => v.note === undefined
          || (typeof v.note === "string" && v.note.length <= 80))
-             && (e.recurrentes || []).every(r => idOk(r.id) && montantOk(r.montant)
-         && ["revenu", "depense"].includes(r.sens) && ids.has(r.compteId)
+    && (e.recurrentes || []).every(r => idOk(r.id) && montantOk(r.montant)
          && Number.isInteger(r.jour) && r.jour >= 1 && r.jour <= 31
-         && /^\d{4}-\d{2}$/.test(r.debut) && /^[a-z0-9-]+$/.test(r.categorie)
+         && /^\d{4}-\d{2}$/.test(r.debut)
          && Array.isArray(r.traites) && r.traites.every(m => /^\d{4}-\d{2}$/.test(m))
-         && (r.note === undefined || (typeof r.note === "string" && r.note.length <= 80)));
+         && (r.note === undefined || (typeof r.note === "string" && r.note.length <= 80))
+         && (r.type === "virement"
+             ? ids.has(r.depuisId) && ids.has(r.versId)
+             : ["revenu", "depense"].includes(r.sens) && ids.has(r.compteId)
+               && /^[a-z0-9-]+$/.test(r.categorie)));
 }
 
 function exporterSauvegarde() {
@@ -1078,28 +1112,41 @@ document.getElementById("fichier-import").addEventListener("change", (e) => {
   e.target.value = "";
 });
 let operationEnEdition = null;
+let virementEnEdition = null;
 
 function dateValide(texte) {
   return /^\d{4}-\d{2}-\d{2}$/.test(texte) && texte <= aujourdhui();
 }
 
 function preparerSaisie() {
-  recurrenceEnValidation = null;
   operationEnEdition = null;
+  virementEnEdition = null;
+  recurrenceEnValidation = null;
   for (const id of ["date-operation", "date-virement"]) {
     const champ = document.getElementById(id);
     champ.value = aujourdhui();
     champ.max = aujourdhui();
   }
   document.getElementById("montant").value = "";
+  document.getElementById("virement-montant").value = "";
   document.getElementById("note-operation").value = "";
   document.getElementById("note-virement").value = "";
   document.getElementById("message").textContent = "";
+  document.getElementById("message-virement").textContent = "";
   document.getElementById("bouton-ajouter").textContent = "Ajouter";
+  document.getElementById("bouton-virement").textContent = "Virer";
+  document.getElementById("titre-edition").textContent = "Modifier l'opération";
   document.getElementById("annuler-edition").hidden = true;
   document.getElementById("titre-edition").hidden = true;
   document.querySelector(".bascule").hidden = false;
-  document.getElementById("titre-edition").textContent = "Modifier l'opération";
+}
+function marquerRecurrenceTraitee() {
+  if (!recurrenceEnValidation) return;
+  const r = etat.recurrentes.find(x => x.id === recurrenceEnValidation.id);
+  if (r && !r.traites.includes(recurrenceEnValidation.mois)) {
+    r.traites.push(recurrenceEnValidation.mois);
+  }
+  recurrenceEnValidation = null;
 }
 
 function ajouterOperation() {
@@ -1134,11 +1181,7 @@ function ajouterOperation() {
   } else {
     etat.operations.push({ id: "o" + Date.now(), ...champs });
   }
-    if (recurrenceEnValidation) {
-    const r = etat.recurrentes.find(x => x.id === recurrenceEnValidation.id);
-    if (r && !r.traites.includes(recurrenceEnValidation.mois)) r.traites.push(recurrenceEnValidation.mois);
-  }
-  recurrenceEnValidation = null;
+  marquerRecurrenceTraitee();
   operationEnEdition = null;
   document.getElementById("montant").value = "";
   document.getElementById("panneau-saisie").hidden = true;
@@ -1172,8 +1215,13 @@ function ouvrirEdition(id) {
 }
 
 function cliquerEdition(e) {
-  const cible = e.target.closest("[data-edit]");
-  if (cible) ouvrirEdition(cible.dataset.edit);
+  const op = e.target.closest("[data-edit]");
+  if (op) {
+    ouvrirEdition(op.dataset.edit);
+    return;
+  }
+  const vir = e.target.closest("[data-edit-virement]");
+  if (vir) ouvrirEditionVirement(vir.dataset.editVirement);
 }
 
 document.getElementById("liste-operations-perso").addEventListener("click", cliquerEdition);
@@ -1199,9 +1247,9 @@ function ligneVirement(v) {
   const vers = etat.comptes.find(c => c.id === v.versId);
   return `
     <div class="op">
-      <i class="pastille">↔️</i>
-      <div>Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
-      <span>${centimesVersEuros(v.montant)}</span>
+      <i class="pastille cliquable" data-edit-virement="${v.id}">↔️</i>
+      <div class="cliquable" data-edit-virement="${v.id}">Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
+      <span class="cliquable" data-edit-virement="${v.id}">${centimesVersEuros(v.montant)}</span>
       <button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>
     </div>`;
 }
@@ -1790,8 +1838,12 @@ function moisEntre(debut, fin) {
 function aValider() {
   const liste = [];
   for (const r of etat.recurrentes) {
-    const compte = etat.comptes.find(c => c.id === r.compteId);
-    if (!compte || compte.archive) continue;
+    const ids = r.type === "virement" ? [r.depuisId, r.versId] : [r.compteId];
+    const indisponible = ids.some(id => {
+      const c = etat.comptes.find(x => x.id === id);
+      return !c || c.archive;
+    });
+    if (indisponible) continue;
     for (const mois of moisEntre(r.debut, moisCourant())) {
       if (r.traites.includes(mois)) continue;
       const date = dateEcheance(mois, r.jour);
@@ -1809,15 +1861,24 @@ function afficherAValider() {
     return;
   }
   zone.innerHTML = `<h2>À valider</h2>` + items.map(({ r, mois, date }) => {
-    const signe = r.sens === "revenu" ? "+" : "−";
+    const virement = r.type === "virement";
+    const signe = virement ? "" : (r.sens === "revenu" ? "+ " : "− ");
+    let titre;
+    if (virement) {
+      const de = etat.comptes.find(c => c.id === r.depuisId);
+      const vers = etat.comptes.find(c => c.id === r.versId);
+      titre = `↔️ ${echapper(de.nom)} → ${echapper(vers.nom)}`;
+    } else {
+      titre = `${iconeCategorie(r.categorie)} ${nomCategorie(r.categorie)}`;
+    }
     const boutons = ["valider", "modifier", "passer"].map(act => `
       <button type="button" class="lien-action" data-rec="${r.id}" data-mois="${mois}" data-act="${act}">
         ${act === "valider" ? "Valider" : act === "modifier" ? "Modifier" : "Passer"}</button>`).join("");
     return `
       <div class="budget">
         <div class="budget-ligne">
-          <span>${iconeCategorie(r.categorie)} ${nomCategorie(r.categorie)}${r.note ?" · " + echapper(r.note) : ""}</span>
-          <span>${signe} ${centimesVersEuros(r.montant)}</span>
+          <span>${titre}${r.note ? " · " + echapper(r.note) : ""}</span>
+          <span>${signe}${centimesVersEuros(r.montant)}</span>
         </div>
         <small class="mu">Prévu le ${date}</small>
         <div class="actions-rec">${boutons}</div>
@@ -1826,20 +1887,40 @@ function afficherAValider() {
 }
 
 function ouvrirRecurrence(r, mois) {
-  const choixCompte = document.getElementById("choix-compte");
-  choixCompte.value = r.compteId;
-  if (choixCompte.value !== r.compteId) return;
+  const virement = r.type === "virement";
+  if (virement) {
+    const depuis = document.getElementById("virement-depuis");
+    const vers = document.getElementById("virement-vers");
+    depuis.value = r.depuisId;
+    vers.value = r.versId;
+    if (depuis.value !== r.depuisId || vers.value !== r.versId) return;
+  } else {
+    const choixCompte = document.getElementById("choix-compte");
+    choixCompte.value = r.compteId;
+    if (choixCompte.value !== r.compteId) return;
+  }
   preparerSaisie();
   recurrenceEnValidation = { id: r.id, mois: mois };
-  afficherFormulaire("operation");
-  document.getElementById("montant").value = (r.montant / 100).toFixed(2).replace(".", ",");
-  document.getElementById("date-operation").value = dateEcheance(mois, r.jour);
-  document.getElementById("choix-sens").value = r.sens;
-  remplirChoixCategories();
-  document.getElementById("choix-categorie").value = r.categorie;
-  document.getElementById("note-operation").value = r.note || "";
-  document.getElementById("bouton-ajouter").textContent = "Valider";
-  document.getElementById("titre-edition").textContent = "Valider l'opération prévue";
+  const date = dateEcheance(mois, r.jour);
+  const montant = (r.montant / 100).toFixed(2).replace(".", ",");
+  if (virement) {
+    afficherFormulaire("virement");
+    document.getElementById("virement-montant").value = montant;
+    document.getElementById("date-virement").value = date;
+    document.getElementById("note-virement").value = r.note || "";
+    document.getElementById("bouton-virement").textContent = "Valider";
+    document.getElementById("titre-edition").textContent = "Valider le virement prévu";
+  } else {
+    afficherFormulaire("operation");
+    document.getElementById("montant").value = montant;
+    document.getElementById("date-operation").value = date;
+    document.getElementById("choix-sens").value = r.sens;
+    remplirChoixCategories();
+    document.getElementById("choix-categorie").value = r.categorie;
+    document.getElementById("note-operation").value = r.note || "";
+    document.getElementById("bouton-ajouter").textContent = "Valider";
+    document.getElementById("titre-edition").textContent = "Valider l'opération prévue";
+  }
   document.getElementById("titre-edition").hidden = false;
   document.getElementById("annuler-edition").hidden = false;
   document.querySelector(".bascule").hidden = true;
@@ -1858,10 +1939,18 @@ document.getElementById("carte-a-valider").addEventListener("click", (e) => {
     return;
   }
   if (act === "valider") {
-    etat.operations.push({
-      id: "o" + Date.now(), compteId: r.compteId, sens: r.sens, montant: r.montant,
-      date: dateEcheance(mois, r.jour), categorie: r.categorie, note: r.note || ""
-    });
+    const date = dateEcheance(mois, r.jour);
+    if (r.type === "virement") {
+      etat.virements.push({
+        id: "v" + Date.now(), depuisId: r.depuisId, versId: r.versId,
+        montant: r.montant, date: date, note: r.note || ""
+      });
+    } else {
+      etat.operations.push({
+        id: "o" + Date.now(), compteId: r.compteId, sens: r.sens, montant: r.montant,
+        date: date, categorie: r.categorie, note: r.note || ""
+      });
+    }
   }
   r.traites.push(mois);
   sauvegarder();
@@ -1874,8 +1963,21 @@ function remplirChoixRecurrence() {
   choix.innerHTML = comptesActifs().filter(c => !estPlacement(c))
     .map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join("");
   if (memoire) choix.value = memoire;
+  for (const idMenu of ["rec-depuis", "rec-vers"]) {
+    const menu = document.getElementById(idMenu);
+    const sel = menu.value;
+    menu.innerHTML = comptesActifs()
+      .map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join("");
+    if (sel) menu.value = sel;
+  }
   remplirChoixCategoriesRec();
 }
+function majChampsRecurrence() {
+  const virement = document.getElementById("rec-type").value === "virement";
+  document.getElementById("rec-champs-operation").hidden = virement;
+  document.getElementById("rec-champs-virement").hidden = !virement;
+}
+
 
 function remplirChoixCategoriesRec() {
   const compteId = document.getElementById("rec-compte").value;
@@ -1890,15 +1992,31 @@ function remplirChoixCategoriesRec() {
 }
 
 function enregistrerRecurrence() {
-  const compteId = document.getElementById("rec-compte").value;
-  const sens = document.getElementById("rec-sens").value;
-  const categorie = document.getElementById("rec-categorie").value;
+  const type = document.getElementById("rec-type").value;
   const montant = eurosVersCentimes(document.getElementById("rec-montant").value);
   const jour = Number(document.getElementById("rec-jour").value);
   const message = document.getElementById("message-recurrence");
-  if (!compteId || !categorie) {
-    message.textContent = "Choisis un compte et une catégorie";
-    return;
+  let base;
+  if (type === "virement") {
+    const depuisId = document.getElementById("rec-depuis").value;
+    const versId = document.getElementById("rec-vers").value;
+    if (!depuisId || !versId) {
+      message.textContent = "Choisis deux comptes";
+      return;
+    }
+    if (depuisId === versId) {
+      message.textContent = "Choisis deux comptes différents";
+      return;
+    }
+    base = { type: "virement", depuisId: depuisId, versId: versId };
+  } else {
+    const compteId = document.getElementById("rec-compte").value;
+    const categorie = document.getElementById("rec-categorie").value;
+    if (!compteId || !categorie) {
+      message.textContent = "Choisis un compte et une catégorie";
+      return;
+    }
+    base = { compteId: compteId, sens: document.getElementById("rec-sens").value, categorie: categorie };
   }
   if (isNaN(montant) || montant <= 0) {
     message.textContent = "Montant invalide";
@@ -1909,13 +2027,12 @@ function enregistrerRecurrence() {
     return;
   }
   etat.recurrentes.push({
-    id: "r" + Date.now(), compteId: compteId, sens: sens, categorie: categorie,
-    montant: montant, jour: jour,
+    id: "r" + Date.now(), ...base, montant: montant, jour: jour,
     note: document.getElementById("rec-note").value.trim().slice(0, 80),
     debut: document.getElementById("rec-debut").value === "suivant" ? moisDecale(1) : moisCourant(),
     traites: []
   });
-  message.textContent = "Opération récurrente ajoutée";
+  message.textContent = "Ajouté";
   document.getElementById("rec-montant").value = "";
   document.getElementById("rec-jour").value = "";
   document.getElementById("rec-note").value = "";
@@ -1926,15 +2043,28 @@ function enregistrerRecurrence() {
 function afficherRecurrentes() {
   const zone = document.getElementById("liste-recurrentes");
   if (etat.recurrentes.length === 0) {
-    zone.innerHTML = `<div class="mu">Aucune opération récurrente.</div>`;
+    zone.innerHTML = `<div class="mu">Aucune opération ni virement récurrent.</div>`;
     return;
   }
   zone.innerHTML = etat.recurrentes.map(r => {
+    const note = r.note ? `<small>${echapper(r.note)}</small>` : "";
+    if (r.type === "virement") {
+      const de = etat.comptes.find(c => c.id === r.depuisId);
+      const vers = etat.comptes.find(c => c.id === r.versId);
+      return `
+        <div class="op">
+          <i class="pastille">↔️</i>
+          <div>Virement<small>Le ${r.jour} de chaque mois · ${de ? echapper(de.nom) : "?"} → ${vers ? echapper(vers.nom) : "?"}</small>${note}</div>
+          <span>${centimesVersEuros(r.montant)}</span>
+          <button class="supprimer" data-rec-supp="${r.id}" aria-label="Supprimer">✕</button>
+        </div>`;
+    }
     const compte = etat.comptes.find(c => c.id === r.compteId);
     const signe = r.sens === "revenu" ? "+" : "−";
     return `
       <div class="op">
-        <div>${nomCategorie(r.categorie)}<small>Le ${r.jour} de chaque mois · ${compte ? echapper(compte.nom) : "?"}</small>${r.note ? `<small>${echapper(r.note)}</small>` : ""}</div>
+        <i class="pastille">${iconeCategorie(r.categorie)}</i>
+        <div>${nomCategorie(r.categorie)}<small>Le ${r.jour} de chaque mois · ${compte ? echapper(compte.nom) : "?"}</small>${note}</div>
         <span>${signe} ${centimesVersEuros(r.montant)}</span>
         <button class="supprimer" data-rec-supp="${r.id}" aria-label="Supprimer">✕</button>
       </div>`;
@@ -1951,6 +2081,7 @@ document.getElementById("liste-recurrentes").addEventListener("click", (e) => {
 });
 
 document.getElementById("bouton-recurrence").addEventListener("click", enregistrerRecurrence);
+document.getElementById("rec-type").addEventListener("change", majChampsRecurrence);
 document.getElementById("rec-compte").addEventListener("change", remplirChoixCategoriesRec);
 document.getElementById("rec-sens").addEventListener("change", remplirChoixCategoriesRec);
 const ICONES_DEFAUT = {
@@ -2139,21 +2270,34 @@ function afficherCourbeEpargne() {
 document.getElementById("graphique-perso").addEventListener("click", cliquerBudget);
 document.getElementById("graphique-commun").addEventListener("click", cliquerBudget);
 const CLE_THEME = "budget-theme";
-const NOMS_THEMES = ["bleu-rose", "sombre", "pastel", "ludique"];
+const NOMS_THEMES = ["bleu-rose", "sombre", "pastel", "ludique",
+                     "dore", "argente", "foret", "ocean", "minuit", "orargent", "auto"];
 
 function themeEnregistre() {
   try { return localStorage.getItem(CLE_THEME) || "bleu-rose"; }
   catch (e) { return "bleu-rose"; }
 }
 
+function themeEffectif(choix) {
+  if (choix === "auto") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "sombre" : "bleu-rose";
+  }
+  return choix;
+}
+
 function appliquerTheme(nom) {
   if (!NOMS_THEMES.includes(nom)) nom = "bleu-rose";
-  document.documentElement.setAttribute("data-theme", nom);
   try { localStorage.setItem(CLE_THEME, nom); } catch (e) {}
+  document.documentElement.setAttribute("data-theme", themeEffectif(nom));
   const fond = getComputedStyle(document.documentElement).getPropertyValue("--fond").trim();
   document.querySelector('meta[name="theme-color"]').setAttribute("content", fond);
   document.getElementById("choix-theme").value = nom;
 }
+
+document.getElementById("choix-theme").addEventListener("change", (e) => appliquerTheme(e.target.value));
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (themeEnregistre() === "auto") appliquerTheme("auto");
+});
 
 document.getElementById("choix-theme").addEventListener("change", (e) => appliquerTheme(e.target.value));
 const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages", "mouvements"];

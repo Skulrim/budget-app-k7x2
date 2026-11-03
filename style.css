@@ -301,10 +301,83 @@ h2 {
 }
 
 /* Règles qui utilisaient du blanc ou des couleurs fixes */
-.hero, .saisie button, .bascule button.actif, #bouton-plus, #notif {
+.saisie button, .bascule button.actif, #bouton-plus, #notif {
   color: var(--texte-sur-accent);
 }
+.hero {
+  background: var(--hero-fond, var(--accent));
+  color: var(--hero-texte, var(--texte-sur-accent));
+}
+.petit { color: var(--hero-secondaire, var(--sur-accent)); }
 .anneau .piste { stroke: var(--anneau-piste); }
 .anneau .trait { stroke: var(--anneau-trait); }
 .carte, .budget, .patrimoine, .badge { border-width: var(--epaisseur); }
 #bouton-plus { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }
+:root[data-theme="dore"] {
+  color-scheme: dark;
+  --fond: #14110a; --carte: #1f1a10; --bord: #4a3d1c; --piste: #332a14;
+  --texte: #f6eedb; --discret: #b5a77f;
+  --accent: #d4a73a; --accent-fonce: #e8c15a; --accent-clair: #2b2414;
+  --accent-texte: #e8c15a; --sur-accent: #4d3b10; --texte-sur-accent: #1a1405;
+  --anneau-piste: #b88c24; --anneau-trait: #1a1405;
+  --hero-fond: linear-gradient(135deg, #f1d684, #c89a2c);
+  --hero-texte: #1a1405; --hero-secondaire: #4d3b10;
+  --alerte: #ff5d73; --alerte-texte: #ff8a9a; --ombre: none;
+  --s1: #d4a73a; --s2: #6fb7a8; --s3: #b8a1e6; --s4: #c8794a; --s5: #8fb4e8; --s6: #9a917a;
+}
+
+:root[data-theme="argente"] {
+  --fond: #eceff3; --carte: #ffffff; --bord: #cfd5df; --piste: #e0e4eb;
+  --texte: #1f2633; --discret: #6b7587;
+  --accent: #64748f; --accent-fonce: #46556f; --accent-clair: #e3e8f0;
+  --accent-texte: #3f4e68; --sur-accent: #e3e8f0; --texte-sur-accent: #ffffff;
+  --anneau-piste: #8d9ab2; --anneau-trait: #1f2633;
+  --hero-fond: linear-gradient(135deg, #dde2ea, #a3aec3);
+  --hero-texte: #1f2633; --hero-secondaire: #3d4960;
+  --alerte: #e0457b; --alerte-texte: #b52a5c;
+  --s1: #64748f; --s2: #3fa7a0; --s3: #8a7bd6; --s4: #e0a23c; --s5: #5aa0d8; --s6: #a8b0c0;
+}
+
+:root[data-theme="foret"] {
+  --fond: #eef5ee; --carte: #ffffff; --bord: #c5dccb; --piste: #dcebde;
+  --texte: #1d3326; --discret: #5f7a68;
+  --accent: #2f7d4f; --accent-fonce: #1f6a3e; --accent-clair: #dff0e3;
+  --accent-texte: #1f6a3e; --sur-accent: #d6efdc; --texte-sur-accent: #ffffff;
+  --anneau-piste: #6fb58a; --anneau-trait: #ffffff;
+  --alerte: #e0455f; --alerte-texte: #b02a43;
+  --s1: #2f7d4f; --s2: #d9a23a; --s3: #4a90c2; --s4: #8a6fd0; --s5: #c9703f; --s6: #7f9a88;
+}
+
+:root[data-theme="ocean"] {
+  --fond: #e9f6fa; --carte: #ffffff; --bord: #bfdfe8; --piste: #d5ebf2;
+  --texte: #12303d; --discret: #567987;
+  --accent: #0c7f9c; --accent-fonce: #0a6a83; --accent-clair: #d9f0f6;
+  --accent-texte: #0a6a83; --sur-accent: #d3f1f8; --texte-sur-accent: #ffffff;
+  --anneau-piste: #5cb8cf; --anneau-trait: #ffffff;
+  --alerte: #ff5c7a; --alerte-texte: #c42b4d;
+  --s1: #0c7f9c; --s2: #2fbf9b; --s3: #7a8cf0; --s4: #f0a93d; --s5: #5aa0e0; --s6: #8aa4ad;
+}
+
+:root[data-theme="minuit"] {
+  color-scheme: dark;
+  --fond: #0b1224; --carte: #151d36; --bord: #2a3560; --piste: #222c4f;
+  --texte: #e8ecff; --discret: #94a0cc;
+  --accent: #7c8cff; --accent-fonce: #a3afff; --accent-clair: #1e2850;
+  --accent-texte: #a3afff; --sur-accent: #1d2760; --texte-sur-accent: #0b1224;
+  --anneau-piste: #5f6fe0; --anneau-trait: #0b1224;
+  --alerte: #ff5c8a; --alerte-texte: #ff8fb0; --ombre: none;
+  --s1: #7c8cff; --s2: #4fd1c5; --s3: #f2b14a; --s4: #b48cff; --s5: #6ec1ff; --s6: #8e98c0;
+}
+:root[data-theme="orargent"] {
+  color-scheme: dark;
+  --fond: #17171c; --carte: #202027; --bord: #4a4a55; --piste: #32323b;
+  --texte: #f1f2f5; --discret: #a9acb8;
+  --accent: #d9ae45; --accent-fonce: #ecc765; --accent-clair: #2a2a33;
+  --accent-texte: #ecc765; --sur-accent: #4a3c14; --texte-sur-accent: #17171c;
+  --anneau-piste: rgba(23, 23, 28, 0.25); --anneau-trait: #17171c;
+  --hero-fond: linear-gradient(135deg, #eceff3 0%, #c4c9d4 35%, #e8c15a 70%, #b8892a 100%);
+  --hero-texte: #17171c; --hero-secondaire: #3a3a44;
+  --alerte: #ff5d73; --alerte-texte: #ff8a9a; --ombre: none;
+  --s1: #d9ae45; --s2: #c4c9d4; --s3: #c8794a; --s4: #7fa6d9; --s5: #6fb7a8; --s6: #8b8e99;
+}
+.champs { display: flex; flex-direction: column; gap: 8px; }

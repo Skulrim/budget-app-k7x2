@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mon budget</title>
-  <script>
+<script>
   try {
     var t = localStorage.getItem("budget-theme");
+    if (t === "auto") {
+      t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "sombre" : "bleu-rose";
+    }
     if (t) document.documentElement.setAttribute("data-theme", t);
   } catch (e) {}
 </script>
@@ -207,15 +210,27 @@
 </details>
 
 <details class="repliable">
-  <summary>Opérations récurrentes</summary>
-  <h3>Nouvelle opération récurrente</h3>
+  <summary>Opérations et virements récurrents</summary>
+  <h3>Nouveau</h3>
   <div class="saisie">
-    <select id="rec-compte"></select>
-    <select id="rec-sens">
-      <option value="depense">Dépense</option>
-      <option value="revenu">Revenu</option>
+    <select id="rec-type">
+      <option value="operation">Dépense ou revenu</option>
+      <option value="virement">Virement</option>
     </select>
-    <select id="rec-categorie"></select>
+    <div id="rec-champs-operation" class="champs">
+      <select id="rec-compte"></select>
+      <select id="rec-sens">
+        <option value="depense">Dépense</option>
+        <option value="revenu">Revenu</option>
+      </select>
+      <select id="rec-categorie"></select>
+    </div>
+    <div id="rec-champs-virement" class="champs" hidden>
+      <span class="mu">Depuis</span>
+      <select id="rec-depuis"></select>
+      <span class="mu">Vers</span>
+      <select id="rec-vers"></select>
+    </div>
     <input id="rec-montant" type="text" inputmode="decimal" placeholder="Montant habituel (ex : 15,99)">
     <input id="rec-jour" type="number" min="1" max="31" inputmode="numeric" placeholder="Jour du mois (1 à 31)">
     <input id="rec-note" type="text" maxlength="80" placeholder="Note (facultative)">
@@ -226,7 +241,7 @@
     <button id="bouton-recurrence" type="button">Enregistrer</button>
     <p id="message-recurrence"></p>
   </div>
-  <h3>Mes opérations récurrentes</h3>
+  <h3>Mes opérations et virements récurrents</h3>
   <section id="liste-recurrentes"></section>
 </details>
   </div>
@@ -239,6 +254,13 @@
       <option value="sombre">Sombre</option>
       <option value="pastel">Pastel</option>
       <option value="ludique">Coloré</option>
+      <option value="dore">Doré</option>
+      <option value="argente">Argenté</option>
+      <option value="foret">Forêt</option>
+      <option value="ocean">Océan</option>
+      <option value="minuit">Minuit</option>
+      <option value="orargent">Or et argent</option>
+      <option value="auto">Automatique (suit l'iPhone)</option>
     </select>
   </div>
 </details>
