@@ -178,7 +178,9 @@ function afficherComptes() {
   dessinerComptes("liste-placements", estPlacement);
 }
 function eurosVersCentimes(texte) {
-  return Math.round(parseFloat(texte.replace(",", ".")) * 100);
+  const propre = String(texte).replace(/[\s\u00a0\u202f€]/g, "").replace(",", ".");
+  if (!/^-?\d+(\.\d+)?$/.test(propre)) return NaN;
+  return Math.round(parseFloat(propre) * 100);
 }
 
 function remplirChoixComptes() {
@@ -317,8 +319,6 @@ function afficherReste() {
       <svg width="96" height="96" viewBox="0 0 96 96">
         <circle class="piste" cx="48" cy="48" r="40" fill="none" stroke-width="9"/>
         <circle class="trait" cx="48" cy="48" r="40" fill="none" stroke-width="9"
-          stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
-          data-trait="${trait}" data-circ="${circonference}"/>
           stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
           data-trait="${trait}" data-circ="${circonference}"/>
       </svg>
@@ -479,18 +479,16 @@ function supprimerCategorie(e) {
   if (!id) return;
   const message = document.getElementById("message-categorie-liste");
   const utilisee = etat.operations.some(o => o.categorie === id)
-    || etat.budgets.some(b => b.categorie === id);
+    || etat.budgets.some(b => b.categorie === id)
+    || etat.recurrentes.some(r => r.categorie === id);
   if (utilisee) {
     message.textContent = "Cette catégorie est utilisée (opérations ou budget) : retire d'abord le budget, elle ne peut pas être supprimée si des opérations l'utilisent.";
     return;
   }
-  if (!confirm("Supprimer cette catégorie ?")) return;
   message.textContent = "";
-  etat.categories = etat.categories.filter(c => c.id !== id);
-  sauvegarder();
-  remplirChoixCategories();
-  remplirChoixBudget();
-  rafraichir();
+  supprimerAvecAnnulation("Catégorie supprimée", () => {
+    etat.categories = etat.categories.filter(c => c.id !== id);
+  });
 }
 
 document.getElementById("bouton-categorie").addEventListener("click", creerCategorie);
@@ -501,10 +499,9 @@ function retirerBudget(e) {
   const portee = e.target.dataset.portee;
   const cat = e.target.dataset.cat;
   if (!portee || !cat) return;
-  if (!confirm("Retirer ce budget ? Les dépenses déjà saisies sont conservées.")) return;
-  etat.budgets = etat.budgets.filter(b => !(b.portee === portee && b.categorie === cat));
-  sauvegarder();
-  rafraichir();
+  supprimerAvecAnnulation("Budget retiré", () => {
+    etat.budgets = etat.budgets.filter(b => !(b.portee === portee && b.categorie === cat));
+  });
 }
 
 document.getElementById("bouton-budget").addEventListener("click", enregistrerBudget);
@@ -628,10 +625,11 @@ function afficherMises() {
     .slice(0, 10);
   for (const m of recentes) {
     const o = etat.objectifs.find(x => x.id === m.objectifId);
+    const retrait = m.montant < 0;
     zone.innerHTML += `
       <div class="op">
-        <div>${echapper(o ? o.nom : "?")}<small>${m.date}</small></div>
-        <span>${centimesVersEuros(m.montant)}</span>
+        <div>${echapper(o ? o.nom : "?")}<small>${m.date}${retrait ? " · Retrait" : ""}</small></div>
+        <span class="${retrait ? "" : "revenu"}">${retrait ? "−" : "+"} ${centimesVersEuros(Math.abs(m.montant))}</span>
         <button class="supprimer" data-mise="${m.id}" aria-label="Supprimer">✕</button>
       </div>`;
   }
@@ -713,10 +711,9 @@ function afficherPlans() {
 function retirerPlan(e) {
   const id = e.target.dataset.plan;
   if (!id) return;
-  if (!confirm("Retirer ce plan d'épargne ? Les virements déjà faits sont conservés.")) return;
-  etat.plansEpargne = etat.plansEpargne.filter(p => p.id !== id);
-  sauvegarder();
-  rafraichir();
+  supprimerAvecAnnulation("Plan d'épargne retiré", () => {
+    etat.plansEpargne = etat.plansEpargne.filter(p => p.id !== id);
+  });
 }
 
 document.getElementById("bouton-plan").addEventListener("click", enregistrerPlan);
@@ -747,7 +744,7 @@ function creerObjectif() {
   rafraichir();
 }
 
-function mettreDeCote() {
+function mettreDeCote(sens) {
   const objectifId = document.getElementById("objectif-choix").value;
   const montant = eurosVersCentimes(document.getElementById("objectif-ajout").value);
   const message = document.getElementById("message-objectif-ajout");
@@ -759,11 +756,16 @@ function mettreDeCote() {
     message.textContent = "Montant invalide";
     return;
   }
+  const dejaMis = totalMisDeCote(objectifId);
+  if (sens < 0 && montant > dejaMis) {
+    message.textContent = "Tu ne peux retirer que " + centimesVersEuros(dejaMis) + " au maximum";
+    return;
+  }
   message.textContent = "";
   etat.misesDeCote.push({
     id: "m" + Date.now(),
     objectifId: objectifId,
-    montant: montant,
+    montant: montant * sens,
     date: new Date().toLocaleDateString("sv-SE")
   });
   document.getElementById("objectif-ajout").value = "";
@@ -774,23 +776,28 @@ function mettreDeCote() {
 function supprimerObjectif(e) {
   const id = e.target.dataset.objectif;
   if (!id) return;
-  if (!confirm("Supprimer cet objectif ? Ton argent n'est pas touché, seul le suivi disparaît.")) return;
-  etat.objectifs = etat.objectifs.filter(o => o.id !== id);
-  etat.misesDeCote = etat.misesDeCote.filter(m => m.objectifId !== id);
-  sauvegarder();
-  rafraichir();
+  supprimerAvecAnnulation("Objectif supprimé", () => {
+    etat.objectifs = etat.objectifs.filter(o => o.id !== id);
+    etat.misesDeCote = etat.misesDeCote.filter(m => m.objectifId !== id);
+  });
 }
 
 document.getElementById("bouton-objectif-creer").addEventListener("click", creerObjectif);
-document.getElementById("bouton-objectif-ajout").addEventListener("click", mettreDeCote);
+document.getElementById("bouton-objectif-ajout").addEventListener("click", () => mettreDeCote(1));
+document.getElementById("bouton-objectif-retrait").addEventListener("click", () => mettreDeCote(-1));
 document.getElementById("liste-objectifs").addEventListener("click", supprimerObjectif);
 document.getElementById("liste-mises").addEventListener("click", (e) => {
   const id = e.target.dataset.mise;
   if (!id) return;
-  if (!confirm("Supprimer cette mise de côté ?")) return;
-  etat.misesDeCote = etat.misesDeCote.filter(m => m.id !== id);
-  sauvegarder();
-  rafraichir();
+  const mise = etat.misesDeCote.find(m => m.id === id);
+  if (!mise) return;
+  if (totalMisDeCote(mise.objectifId) - mise.montant < 0) {
+    montrerNotif("Impossible : l'objectif deviendrait négatif. Supprime d'abord le retrait lié.");
+    return;
+  }
+  supprimerAvecAnnulation("Ligne supprimée", () => {
+    etat.misesDeCote = etat.misesDeCote.filter(m => m.id !== id);
+  });
 });
 function comptesActifs() {
   return etat.comptes.filter(c => !c.archive);
@@ -1024,10 +1031,9 @@ document.getElementById("bouton-valo").addEventListener("click", enregistrerValo
 document.getElementById("liste-valorisations").addEventListener("click", (e) => {
   const id = e.target.dataset.id;
   if (!id) return;
-  if (!confirm("Supprimer cette valorisation ?")) return;
-  etat.valorisations = etat.valorisations.filter(v => v.id !== id);
-  sauvegarder();
-  rafraichir();
+  supprimerAvecAnnulation("Valorisation supprimée", () => {
+    etat.valorisations = etat.valorisations.filter(v => v.id !== id);
+  });
 });
 function etatValide(e) {
   if (!e || !Array.isArray(e.comptes) || !Array.isArray(e.operations)
@@ -1053,7 +1059,8 @@ function etatValide(e) {
          && (e.reglages.dernierExport === undefined || dateOk(e.reglages.dernierExport))))
       && (e.objectifs || []).every(o => idOk(o.id) && montantOk(o.cible))
     && (e.misesDeCote || []).every(m => idOk(m.id) && dateOk(m.date)
-      && montantOk(m.montant) && (e.objectifs || []).some(o => o.id === m.objectifId))
+      && Number.isInteger(m.montant) && m.montant !== 0
+      && (e.objectifs || []).some(o => o.id === m.objectifId))
       && (e.badges || []).every(x => /^[a-z-]+$/.test(x.id) && dateOk(x.date))
       && (e.bilansVus || []).every(m => /^\d{4}-\d{2}$/.test(m))
        && (e.plansEpargne || []).every(p => idOk(p.id) && montantOk(p.montant) && ids.has(p.compteId))
@@ -1095,7 +1102,7 @@ function importerSauvegarde(fichier) {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
       if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [] }, donnees.etat);
+      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [] }, donnees.etat);
       sauvegarder();
       remplirChoixComptes();
       remplirChoixCategories();
@@ -1306,6 +1313,8 @@ function rafraichir() {
   remplirChoixCategoriesRec();
   afficherAnneaux();
   afficherCourbeEpargne();
+  afficherCourbeEpargne();
+  afficherHistogrammeMois();
 }
 
 function supprimerOperation(e) {
@@ -1313,14 +1322,14 @@ function supprimerOperation(e) {
   const type = e.target.dataset.type;
   if (!id) return;
   if (type === "virement") {
-    if (!confirm("Supprimer ce virement ?")) return;
-    etat.virements = etat.virements.filter(v => v.id !== id);
+    supprimerAvecAnnulation("Virement supprimé", () => {
+      etat.virements = etat.virements.filter(v => v.id !== id);
+    });
   } else {
-    if (!confirm("Supprimer cette opération ?")) return;
-    etat.operations = etat.operations.filter(op => op.id !== id);
+    supprimerAvecAnnulation("Opération supprimée", () => {
+      etat.operations = etat.operations.filter(op => op.id !== id);
+    });
   }
-  sauvegarder();
-  rafraichir();
 }
 function aujourdhui() {
   return new Date().toLocaleDateString("sv-SE");
@@ -1415,6 +1424,47 @@ function montrerNotif(texte) {
   minuterie = setTimeout(() => { n.hidden = true; }, 4000);
 }
 
+/* ----- Suppression avec possibilité d'annuler ----- */
+let annulation = null;
+let minuterieAnnulation = null;
+
+function rafraichirTout() {
+  remplirChoixCategories();
+  remplirChoixBudget();
+  rafraichir();
+}
+
+function supprimerAvecAnnulation(texte, action) {
+  const avant = JSON.stringify(etat);
+  action();
+  sauvegarder();
+  rafraichirTout();
+  annulation = { avant: avant, apres: JSON.stringify(etat) };
+  document.getElementById("texte-annuler").textContent = texte;
+  document.getElementById("bandeau-annuler").hidden = false;
+  clearTimeout(minuterieAnnulation);
+  minuterieAnnulation = setTimeout(fermerBandeauAnnulation, 6000);
+}
+
+function fermerBandeauAnnulation() {
+  document.getElementById("bandeau-annuler").hidden = true;
+  annulation = null;
+}
+
+document.getElementById("bouton-annuler").addEventListener("click", () => {
+  if (!annulation) return;
+  if (JSON.stringify(etat) !== annulation.apres) {
+    fermerBandeauAnnulation();
+    montrerNotif("Annulation impossible : d'autres modifications ont eu lieu.");
+    return;
+  }
+  const precedent = JSON.parse(annulation.avant);
+  fermerBandeauAnnulation();
+  Object.assign(etat, precedent);
+  sauvegarder();
+  rafraichirTout();
+  montrerNotif("Suppression annulée");
+});
 function verifierBadges() {
   const nouveaux = [];
   for (const b of BADGES) {
@@ -2076,10 +2126,9 @@ function afficherRecurrentes() {
 document.getElementById("liste-recurrentes").addEventListener("click", (e) => {
   const id = e.target.dataset.recSupp;
   if (!id) return;
-  if (!confirm("Supprimer cette opération récurrente ? Les opérations déjà créées sont conservées.")) return;
-  etat.recurrentes = etat.recurrentes.filter(r => r.id !== id);
-  sauvegarder();
-  rafraichir();
+  supprimerAvecAnnulation("Opération récurrente supprimée", () => {
+    etat.recurrentes = etat.recurrentes.filter(r => r.id !== id);
+  });
 });
 
 document.getElementById("bouton-recurrence").addEventListener("click", enregistrerRecurrence);
@@ -2268,6 +2317,41 @@ function afficherCourbeEpargne() {
     </svg>
     <div class="courbe-axe"><span>${moisCourt(premier.mois)}</span><span>${moisCourt(dernier.mois)}</span></div>`;
 }
+/* ----- Histogramme des dépenses sur 6 mois ----- */
+function afficherHistogrammeMois() {
+  const zone = document.getElementById("graphique-mois");
+  const courant = moisCourant();
+  const serie = moisEntre(moisDecale(-5), courant).map(m => ({
+    mois: m,
+    total: somme(etat.operations.filter(o => o.sens === "depense" && o.date.startsWith(m)))
+  }));
+  const max = Math.max(...serie.map(p => p.total));
+  if (max === 0) {
+    zone.innerHTML = `<div class="mu">Pas encore de dépenses à comparer.</div>`;
+    return;
+  }
+  const passes = serie.filter(p => p.mois !== courant && p.total > 0);
+  const moyenne = passes.length > 0
+    ? Math.round(passes.reduce((s, p) => s + p.total, 0) / passes.length) : null;
+
+  const colonnes = serie.map(p => {
+    const hauteur = p.total > 0 ? Math.max(4, Math.round(p.total / max * 100)) : 0;
+    const [a, m] = p.mois.split("-").map(Number);
+    const nom = new Date(a, m - 1, 1).toLocaleDateString("fr-FR", { month: "short" });
+    return `
+      <div class="histo-col${p.mois === courant ? " courant" : ""}">
+        <small class="histo-val">${p.total > 0 ? eurosRonds(p.total) : "—"}</small>
+        <div class="histo-zone"><div class="histo-barre" style="height:${hauteur}%"></div></div>
+        <small class="histo-mois">${echapper(nom)}</small>
+      </div>`;
+  }).join("");
+
+  zone.innerHTML = `
+    <div class="histo">${colonnes}</div>
+    ${moyenne !== null
+      ? `<div class="mu">Moyenne des mois précédents : ${centimesVersEuros(moyenne)}. Le mois en cours (en couleur pleine) n'est pas terminé.</div>`
+      : `<div class="mu">Le mois en cours (en couleur pleine) n'est pas terminé.</div>`}`;
+}
 
 document.getElementById("graphique-perso").addEventListener("click", cliquerBudget);
 document.getElementById("graphique-commun").addEventListener("click", cliquerBudget);
@@ -2301,7 +2385,6 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   if (themeEnregistre() === "auto") appliquerTheme("auto");
 });
 
-document.getElementById("choix-theme").addEventListener("change", (e) => appliquerTheme(e.target.value));
 const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages", "mouvements"];
 let vuePrecedente = "accueil";
 

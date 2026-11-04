@@ -383,3 +383,25 @@ h2 {
 .champs { display: flex; flex-direction: column; gap: 8px; }
 .panneau { cursor: pointer; }
 .panneau-contenu { cursor: auto; }
+/* ===== Histogramme ===== */
+.histo { display: flex; gap: 6px; align-items: flex-end; }
+.histo-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.histo-zone { height: 100px; width: 100%; display: flex; align-items: flex-end; }
+.histo-barre { width: 100%; border-radius: 6px 6px 2px 2px; background: var(--accent); opacity: 0.4; transition: height 0.6s ease; }
+.histo-col.courant .histo-barre { opacity: 1; }
+.histo-val { font-size: 11px; color: var(--discret); white-space: nowrap; }
+.histo-mois { font-size: 12px; color: var(--discret); text-transform: capitalize; }
+.histo-col.courant .histo-mois { color: var(--accent); font-weight: 700; }
+/* ===== Bandeau Annuler ===== */
+#bandeau-annuler {
+  position: fixed; top: calc(12px + env(safe-area-inset-top));
+  left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: var(--texte); color: var(--fond);
+  border-radius: 14px; padding: 8px 14px; z-index: 25;
+}
+#bandeau-annuler button {
+  background: none; border: none; color: var(--fond); font-family: inherit;
+  font-size: 16px; font-weight: 700; text-decoration: underline;
+  padding: 8px 4px; cursor: pointer;
+}

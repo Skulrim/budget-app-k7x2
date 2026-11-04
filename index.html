@@ -36,6 +36,8 @@
       <h2>Évolution de l'épargne</h2>
 <section id="graphique-epargne" class="patrimoine"></section>
       <section id="carte-reste" class="hero"></section>
+      <h2>Dépenses sur 6 mois</h2>
+      <section id="graphique-mois" class="patrimoine"></section>
       <section id="carte-series" class="patrimoine"></section>
       <section id="carte-bilan" class="patrimoine"></section>
       <h2>Mes comptes</h2>
@@ -88,14 +90,14 @@
 <p id="controle-objectifs"></p>
 <div class="saisie">
   <select id="objectif-choix"></select>
-  <input id="objectif-ajout" type="text" inputmode="decimal" placeholder="Montant mis de côté (ex : 50)">
+  <input id="objectif-ajout" type="text" inputmode="decimal" placeholder="Montant (ex : 50)">
   <button id="bouton-objectif-ajout" type="button">Mettre de côté</button>
+  <button id="bouton-objectif-retrait" type="button">Retirer de l'objectif</button>
   <p id="message-objectif-ajout"></p>
 </div>
 <h2>Dernières mises de côté</h2>
 <section id="liste-mises"></section>
 
-</div>
     </section>
 
     <section id="vue-placements" class="vue" hidden>
@@ -244,8 +246,6 @@
   <h3>Mes opérations et virements récurrents</h3>
   <section id="liste-recurrentes"></section>
 </details>
-  </div>
-</details>
 <details class="repliable">
   <summary>Apparence</summary>
   <div class="saisie">
@@ -328,6 +328,10 @@
   </div>
 </div>
   <div id="notif" hidden></div>
+    <div id="bandeau-annuler" hidden>
+    <span id="texte-annuler"></span>
+    <button id="bouton-annuler" type="button">Annuler</button>
+  </div>
  <nav class="barre">
   <button type="button" data-vue="accueil" class="actif">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
