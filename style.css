@@ -381,3 +381,5 @@ h2 {
   --s1: #d9ae45; --s2: #c4c9d4; --s3: #c8794a; --s4: #7fa6d9; --s5: #6fb7a8; --s6: #8b8e99;
 }
 .champs { display: flex; flex-direction: column; gap: 8px; }
+.panneau { cursor: pointer; }
+.panneau-contenu { cursor: auto; }

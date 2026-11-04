@@ -262,7 +262,9 @@ function afficherBudgets() {
       const ratio = depense / b.montant;
       const pct = Math.min(100, Math.round(ratio * 100));
       const alerte = ratio >= SEUIL_ALERTE;
-      const texte = ratio >= 1 ? "Plafond dépassé" : "Presque au plafond";
+      let texte = "Presque au plafond";
+      if (depense > b.montant) texte = "Plafond dépassé de " + centimesVersEuros(depense - b.montant);
+      else if (depense === b.montant) texte = "Plafond atteint : il ne reste rien";
       zone.innerHTML += `
                 <div class="budget cliquable" data-detail="${b.portee}:${echapper(b.categorie)}">
           <div class="budget-ligne">
@@ -1372,7 +1374,7 @@ function dernierDepassement() {
         franchi = false;
       }
       cumul += op.montant;
-      if (cumul >= b.montant && !franchi) {
+      if (cumul > b.montant && !franchi) {
         franchi = true;
         if (dernier === null || op.date > dernier) dernier = op.date;
       }
@@ -1487,7 +1489,7 @@ function calculerBilan(mois) {
   let pire = null;
   for (const b of etat.budgets) {
     const d = depenseDuMois(b.portee, b.categorie, mois);
-    if (d >= b.montant) {
+    if (d > b.montant) {
       const ecart = d - b.montant;
       if (!pire || ecart > pire.ecart) pire = { categorie: b.categorie, ecart: ecart };
     } else {
@@ -2337,6 +2339,15 @@ document.getElementById("bouton-plus").addEventListener("click", () => {
 document.getElementById("fermer-saisie").addEventListener("click", () => {
   document.getElementById("panneau-saisie").hidden = true;
   preparerSaisie();
+});
+document.getElementById("panneau-saisie").addEventListener("click", (e) => {
+  if (e.target !== e.currentTarget) return;
+  document.getElementById("panneau-saisie").hidden = true;
+  preparerSaisie();
+});
+document.getElementById("panneau-bilan").addEventListener("click", (e) => {
+  if (e.target !== e.currentTarget) return;
+  document.getElementById("panneau-bilan").hidden = true;
 });
 document.getElementById("onglet-operation").addEventListener("click", () => afficherFormulaire("operation"));
 document.getElementById("onglet-virement").addEventListener("click", () => afficherFormulaire("virement"));
