@@ -2,6 +2,7 @@
 
 import { charger } from "./noyau/etat.js";
 import { brancherRendu } from "./rendu.js";
+import { afficherAjustements, initAjustements } from "./ui/ajustements.js";
 import { afficherBadges, afficherSeries, verifierBadges } from "./ui/badges.js";
 import { afficherCarteBilan, initBilan } from "./ui/bilan.js";
 import { afficherBudgets, afficherReste, initBudgets } from "./ui/budgets.js";
@@ -30,6 +31,7 @@ function rafraichir() {
   afficherValorisations();
   afficherPatrimoine();
   afficherGestionComptes();
+  afficherAjustements();
   afficherMatelas();
   afficherObjectifs();
   afficherMises();
@@ -60,6 +62,7 @@ function rafraichirTout() {
 brancherRendu({ rafraichir, rafraichirTout });
 
 initNavigation();
+initAjustements();
 initTheme();
 initSelecteurs();
 initComptes();

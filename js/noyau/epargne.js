@@ -1,9 +1,8 @@
 // Calculs d'épargne : enveloppes d'objectifs, virements du mois, historique et courbe.
 
-import { estPlacement, totalPar } from "./comptes.js";
+import { estPlacement, totalAjustements, totalPar } from "./comptes.js";
 import { dateDuMoment, dernierJourDuMois, moisCourant, moisEntre } from "./dates.js";
 import { etat } from "./etat.js";
-import { momentDe } from "./outils.js";
 
 export function totalEnveloppes() {
   return etat.misesDeCote.reduce((somme, m) => somme + m.montant, 0);
@@ -36,7 +35,7 @@ export function premiereUtilisation() {
   for (const liste of [etat.comptes, etat.operations, etat.virements,
                        etat.valorisations, etat.misesDeCote]) {
     for (const x of liste) {
-      const m = momentDe(x.id);
+      const m = x.creeLe;
       if (m > 1e12) moments.push(m);
     }
   }
@@ -50,7 +49,7 @@ function soldeAu(compte, date) {
     for (const v of etat.valorisations) {
       if (v.compteId !== compte.id || v.date > date) continue;
       if (!ref || v.date > ref.date
-          || (v.date === ref.date && momentDe(v.id) > momentDe(ref.id))) ref = v;
+          || (v.date === ref.date && v.creeLe > ref.creeLe)) ref = v;
     }
     if (ref) solde = ref.valeur;
     for (const v of etat.virements) {
@@ -69,13 +68,14 @@ function soldeAu(compte, date) {
     if (v.versId === compte.id) solde += v.montant;
     if (v.depuisId === compte.id) solde -= v.montant;
   }
+  solde += totalAjustements(compte.id, date);
   return solde;
 }
 
 function debutHistorique() {
   const dates = toutesLesDates();
   for (const c of etat.comptes) {
-    if (momentDe(c.id) > 1e12) dates.push(dateDuMoment(momentDe(c.id)));
+    if (c.creeLe > 1e12) dates.push(dateDuMoment(c.creeLe));
   }
   return dates.length > 0 ? dates.sort()[0].slice(0, 7) : null;
 }

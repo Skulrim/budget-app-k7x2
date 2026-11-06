@@ -157,6 +157,19 @@
     <section id="comptes-archives"></section>
   </details>
 
+  <details class="repliable" id="bloc-ajustement">
+    <summary>Ajuster un solde</summary>
+    <p class="mu">Saisis le solde réel de ta banque : l'appli enregistre l'écart (intérêts, oubli…) sans toucher à tes dépenses ni à tes revenus.</p>
+    <div class="saisie">
+      <select id="ajust-compte"></select>
+      <input id="ajust-solde" type="text" inputmode="decimal" placeholder="Solde réel en € (ex : 1234,56)">
+      <button id="bouton-ajust" type="button">Ajuster le solde</button>
+      <p id="message-ajust"></p>
+    </div>
+    <h3>Derniers ajustements</h3>
+    <section id="liste-ajustements"></section>
+  </details>
+
   <details class="repliable">
     <summary>Budgets et catégories</summary>
     <h3>Ajouter ou modifier un budget</h3>

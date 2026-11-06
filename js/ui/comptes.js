@@ -2,7 +2,7 @@
 
 import { NOMS_TYPES, TYPES_PLACEMENT, calculerSolde, comptesActifs, estPlacement, iconeType, netVerse, ordreType, totalPar, valeurEstimee } from "../noyau/comptes.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
-import { centimesVersEuros, echapper, eurosVersCentimes, ligneMontant } from "../noyau/outils.js";
+import { centimesVersEuros, echapper, eurosVersCentimes, ligneMontant, nouvelEnregistrement } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { remplirChoixCategories, remplirChoixComptes } from "./selecteurs.js";
 
@@ -143,7 +143,7 @@ function creerCompte() {
   }
   message.textContent = "";
   etat.comptes.push({
-    id: "c" + Date.now(),
+    ...nouvelEnregistrement("c"),
     nom: nom,
     type: type,
     proprietaire: document.getElementById("compte-proprio").value,

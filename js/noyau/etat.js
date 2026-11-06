@@ -1,5 +1,7 @@
 // L'état de l'appli (comptes, opérations, budgets…) et sa sauvegarde dans le navigateur.
 
+import { momentDe } from "./outils.js";
+
 export const etat = {
   comptes: [],
   operations: [],
@@ -36,7 +38,8 @@ export const etat = {
   plansEpargne: [],
   recurrentes: [],
   virements: [],
-  valorisations: []
+  valorisations: [],
+  ajustements: []
 };
 
 const CLE = "budget-etat-v1";
@@ -53,7 +56,27 @@ export function charger() {
   try {
     const texte = localStorage.getItem(CLE);
     if (texte) Object.assign(etat, JSON.parse(texte));
+    if (migrerCreeLe()) sauvegarder();
   } catch (e) {
     console.error("Lecture impossible", e);
   }
+}
+
+const LISTES_AVEC_ID = ["comptes", "operations", "virements", "valorisations",
+  "misesDeCote", "plansEpargne", "recurrentes", "objectifs", "ajustements"];
+
+// Donne un champ creeLe aux anciens enregistrements, à partir de l'heure
+// contenue dans leur ancien identifiant. Les identifiants existants ne changent pas :
+// les liens (compteId, objectifId…) restent donc valables. Sans effet si déjà fait.
+export function migrerCreeLe() {
+  let modifie = false;
+  for (const nom of LISTES_AVEC_ID) {
+    for (const x of etat[nom] || []) {
+      if (!Number.isInteger(x.creeLe)) {
+        x.creeLe = momentDe(x.id);
+        modifie = true;
+      }
+    }
+  }
+  return modifie;
 }

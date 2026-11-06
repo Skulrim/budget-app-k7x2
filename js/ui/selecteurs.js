@@ -17,6 +17,16 @@ export function remplirChoixComptes() {
   remplirChoixPlacements();
   remplirChoixPlan();
   remplirChoixRecurrence();
+  remplirChoixAjustement();
+}
+
+// Comptes dont on peut ajuster le solde : courants et livrets (les placements ont leur propre valorisation)
+export function remplirChoixAjustement() {
+  const choix = document.getElementById("ajust-compte");
+  const memoire = choix.value;
+  choix.innerHTML = comptesActifs().filter(c => !estPlacement(c))
+    .map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join("");
+  if (memoire) choix.value = memoire;
 }
 
 function remplirChoixPlacements() {

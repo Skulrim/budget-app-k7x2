@@ -4,7 +4,7 @@ import { estPlacement, iconeType, totalPar } from "../noyau/comptes.js";
 import { totalEnveloppes, totalMisDeCote, virementsVersLeMois } from "../noyau/epargne.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { depensesMensuelles } from "../noyau/operations.js";
-import { centimesVersEuros, echapper, eurosVersCentimes, momentDe, normaliser } from "../noyau/outils.js";
+import { centimesVersEuros, echapper, eurosVersCentimes, normaliser, nouvelEnregistrement } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { montrerNotif, supprimerAvecAnnulation } from "./notifications.js";
 
@@ -80,7 +80,7 @@ export function afficherMises() {
   const zone = document.getElementById("liste-mises");
   zone.innerHTML = "";
   const recentes = [...etat.misesDeCote]
-    .sort((a, b) => momentDe(b.id) - momentDe(a.id))
+    .sort((a, b) => b.creeLe - a.creeLe)
     .slice(0, 10);
   for (const m of recentes) {
     const o = etat.objectifs.find(x => x.id === m.objectifId);
@@ -111,7 +111,7 @@ function enregistrerPlan() {
     existant.montant = montant;
     message.textContent = "Plan mis à jour";
   } else {
-    etat.plansEpargne.push({ id: "e" + Date.now(), compteId: compteId, montant: montant });
+    etat.plansEpargne.push({ ...nouvelEnregistrement("e"), compteId: compteId, montant: montant });
     message.textContent = "Plan ajouté";
   }
   document.getElementById("plan-montant").value = "";
@@ -179,7 +179,7 @@ function creerObjectif() {
     return;
   }
   message.textContent = "";
-  etat.objectifs.push({ id: "g" + Date.now(), nom: nom, cible: cible });
+  etat.objectifs.push({ ...nouvelEnregistrement("g"), nom: nom, cible: cible });
   document.getElementById("objectif-nom").value = "";
   document.getElementById("objectif-cible").value = "";
   sauvegarder();
@@ -205,7 +205,7 @@ function mettreDeCote(sens) {
   }
   message.textContent = "";
   etat.misesDeCote.push({
-    id: "m" + Date.now(),
+    ...nouvelEnregistrement("m"),
     objectifId: objectifId,
     montant: montant * sens,
     date: new Date().toLocaleDateString("sv-SE")

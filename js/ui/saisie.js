@@ -2,7 +2,7 @@
 
 import { aujourdhui, dateValide } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
-import { eurosVersCentimes } from "../noyau/outils.js";
+import { eurosVersCentimes, nouvelEnregistrement } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { montrerNotif } from "./notifications.js";
 import { remplirChoixCategories } from "./selecteurs.js";
@@ -41,7 +41,7 @@ function ajouterVirement() {
     const v = etat.virements.find(x => x.id === edition.virement);
     if (v) Object.assign(v, champs);
   } else {
-    etat.virements.push({ id: "v" + Date.now(), ...champs });
+    etat.virements.push({ ...nouvelEnregistrement("v"), ...champs });
   }
   marquerRecurrenceTraitee();
   edition.virement = null;
@@ -138,7 +138,7 @@ function ajouterOperation() {
     const op = etat.operations.find(o => o.id === edition.operation);
     if (op) Object.assign(op, champs);
   } else {
-    etat.operations.push({ id: "o" + Date.now(), ...champs });
+    etat.operations.push({ ...nouvelEnregistrement("o"), ...champs });
   }
   marquerRecurrenceTraitee();
   edition.operation = null;

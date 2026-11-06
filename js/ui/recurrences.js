@@ -3,7 +3,7 @@
 import { iconeCategorie, nomCategorie } from "../noyau/categories.js";
 import { dateEcheance, moisCourant, moisDecale } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
-import { centimesVersEuros, echapper, eurosVersCentimes } from "../noyau/outils.js";
+import { centimesVersEuros, echapper, eurosVersCentimes, nouvelEnregistrement } from "../noyau/outils.js";
 import { aValider } from "../noyau/recurrences.js";
 import { rafraichir } from "../rendu.js";
 import { supprimerAvecAnnulation } from "./notifications.js";
@@ -126,7 +126,7 @@ function enregistrerRecurrence() {
     return;
   }
   etat.recurrentes.push({
-    id: "r" + Date.now(), ...base, montant: montant, jour: jour,
+    ...nouvelEnregistrement("r"), ...base, montant: montant, jour: jour,
     note: document.getElementById("rec-note").value.trim().slice(0, 80),
     debut: document.getElementById("rec-debut").value === "suivant" ? moisDecale(1) : moisCourant(),
     traites: []
@@ -187,12 +187,12 @@ export function initRecurrences() {
       const date = dateEcheance(mois, r.jour);
       if (r.type === "virement") {
         etat.virements.push({
-          id: "v" + Date.now(), depuisId: r.depuisId, versId: r.versId,
+          ...nouvelEnregistrement("v"), depuisId: r.depuisId, versId: r.versId,
           montant: r.montant, date: date, note: r.note || ""
         });
       } else {
         etat.operations.push({
-          id: "o" + Date.now(), compteId: r.compteId, sens: r.sens, montant: r.montant,
+          ...nouvelEnregistrement("o"), compteId: r.compteId, sens: r.sens, montant: r.montant,
           date: date, categorie: r.categorie, note: r.note || ""
         });
       }

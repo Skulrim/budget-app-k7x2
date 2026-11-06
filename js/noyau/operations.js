@@ -1,9 +1,9 @@
 // Calculs sur les opérations : dépenses du mois, plafonds, liste fusionnée opérations + virements.
 
 import { porteeDuCompte } from "./comptes.js";
-import { moisCourant, moisDecale } from "./dates.js";
+import { aujourdhui, dernierJourDuMois, moisCourant, moisDecale, moisPrecedent } from "./dates.js";
 import { etat } from "./etat.js";
-import { momentDe, normaliser } from "./outils.js";
+import { normaliser } from "./outils.js";
 
 export const SEUIL_ALERTE = 0.8;
 
@@ -50,7 +50,7 @@ export function entreesPour(portee) {
     }
   }
   return entrees.sort((a, b) =>
-    b.date.localeCompare(a.date) || momentDe(b.id) - momentDe(a.id));
+    b.date.localeCompare(a.date) || b.donnee.creeLe - a.donnee.creeLe);
 }
 
 export function operationsDuMois(mois) {
@@ -76,14 +76,37 @@ export function texteRecherche(e) {
     + " " + (e.donnee.note || ""));
 }
 
-export function depensesParCategorie(portee, mois = moisCourant()) {
+export function depensesParCategorie(portee, mois = moisCourant(), jourMax = 31) {
   const totaux = {};
   for (const op of etat.operations) {
     if (op.sens !== "depense" || !op.date.startsWith(mois)) continue;
+    if (Number(op.date.slice(8, 10)) > jourMax) continue;
     if (porteeDuCompte(op.compteId) !== portee) continue;
     totaux[op.categorie] = (totaux[op.categorie] || 0) + op.montant;
   }
   return Object.entries(totaux)
     .map(([categorie, montant]) => ({ categorie: categorie, montant: montant }))
     .sort((a, b) => b.montant - a.montant);
+}
+
+// Dépenses du mois précédent, arrêtées au même jour du mois qu'aujourd'hui.
+// Si le mois précédent est plus court (ex. le 31 vs un mois de 30 jours), on s'arrête à son dernier jour.
+export function comparaisonMoisPrecedent(portee, dateDuJour = aujourdhui()) {
+  const jour = Number(dateDuJour.slice(8, 10));
+  const precedent = moisPrecedent(dateDuJour.slice(0, 7));
+  const jourPrecedent = Math.min(jour, dernierJourDuMois(precedent));
+  const lignes = depensesParCategorie(portee, precedent, jourPrecedent);
+  const parCategorie = {};
+  for (const l of lignes) parCategorie[l.categorie] = l.montant;
+  return {
+    jour: jour,
+    jourPrecedent: jourPrecedent,
+    parCategorie: parCategorie,
+    total: lignes.reduce((s, l) => s + l.montant, 0)
+  };
+}
+
+// Variation en % (arrondie). null si le mois précédent est à 0 : on ne divise pas par zéro.
+export function variationPourcent(actuel, precedent) {
+  return precedent > 0 ? Math.round((actuel - precedent) / precedent * 100) : null;
 }

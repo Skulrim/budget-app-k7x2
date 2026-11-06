@@ -14,8 +14,24 @@ export function echapper(texte) {
     .replace(/'/g, "&#39;");
 }
 
+// Ancien format d'identifiant : une lettre + l'heure de création (ex. "o1730000000000").
+// Ne sert plus qu'à la migration des anciennes données (voir migrerCreeLe).
 export function momentDe(id) {
   return Number(id.slice(1)) || 0;
+}
+
+// Identifiant unique : une lettre (le type) + 16 caractères hexadécimaux au hasard.
+// 64 bits aléatoires : deux appareils ne produiront pas le même identifiant.
+export function nouvelId(prefixe) {
+  const octets = new Uint8Array(8);
+  crypto.getRandomValues(octets);
+  return prefixe + Array.from(octets, o => o.toString(16).padStart(2, "0")).join("");
+}
+
+// Les deux champs communs à tout nouvel enregistrement :
+// l'identifiant et la date de création (en millisecondes).
+export function nouvelEnregistrement(prefixe) {
+  return { id: nouvelId(prefixe), creeLe: Date.now() };
 }
 
 export function eurosVersCentimes(texte) {

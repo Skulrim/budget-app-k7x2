@@ -405,3 +405,7 @@ h2 {
   font-size: 16px; font-weight: 700; text-decoration: underline;
   padding: 8px 4px; cursor: pointer;
 }
+/* ===== Variation par rapport au mois dernier ===== */
+.variation { display: block; font-size: 12px; color: var(--discret); }
+.hausse { color: var(--alerte-texte); }
+.baisse { color: var(--accent-texte); }

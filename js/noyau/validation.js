@@ -4,8 +4,12 @@ export function etatValide(e) {
   if (!e || !Array.isArray(e.comptes) || !Array.isArray(e.operations)
     || !Array.isArray(e.virements)) return false;
   const dateOk = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
-  const idOk = id => /^[a-z]+\d+$/.test(id);
+  const idOk = id => /^[a-z][a-z0-9]+$/.test(id);
   const montantOk = m => Number.isInteger(m) && m > 0;
+  const creeOk = x => x.creeLe === undefined || Number.isInteger(x.creeLe);
+  const listes = ["comptes", "operations", "virements", "valorisations",
+    "misesDeCote", "plansEpargne", "recurrentes", "objectifs", "ajustements"];
+  if (!listes.every(nom => (e[nom] || []).every(creeOk))) return false;
   const ids = new Set(e.comptes.map(c => c.id));
   return e.comptes.every(c => idOk(c.id) && Number.isInteger(c.soldeDepart)
       && (c.archive === undefined || typeof c.archive === "boolean"))
@@ -29,6 +33,8 @@ export function etatValide(e) {
       && (e.badges || []).every(x => /^[a-z-]+$/.test(x.id) && dateOk(x.date))
       && (e.bilansVus || []).every(m => /^\d{4}-\d{2}$/.test(m))
        && (e.plansEpargne || []).every(p => idOk(p.id) && montantOk(p.montant) && ids.has(p.compteId))
+    && (e.ajustements || []).every(a => idOk(a.id) && dateOk(a.date)
+      && Number.isInteger(a.montant) && a.montant !== 0 && ids.has(a.compteId))
     && e.operations.every(o => o.note === undefined
          || (typeof o.note === "string" && o.note.length <= 80))
     && e.virements.every(v => v.note === undefined

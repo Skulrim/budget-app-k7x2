@@ -1,7 +1,6 @@
 // Règles métier des comptes : soldes, valeur des placements, portée perso/commun.
 
 import { etat } from "./etat.js";
-import { momentDe } from "./outils.js";
 
 export const TYPES_PLACEMENT = ["pea", "assurance-vie"];
 
@@ -10,10 +9,10 @@ export function estPlacement(compte) {
 }
 
 function referencePlacement(compte) {
-  let ref = { moment: momentDe(compte.id), valeur: compte.soldeDepart };
+  let ref = { moment: compte.creeLe, valeur: compte.soldeDepart };
   for (const v of etat.valorisations) {
     if (v.compteId !== compte.id) continue;
-    if (momentDe(v.id) > ref.moment) ref = { moment: momentDe(v.id), valeur: v.valeur };
+    if (v.creeLe > ref.moment) ref = { moment: v.creeLe, valeur: v.valeur };
   }
   return ref;
 }
@@ -22,7 +21,7 @@ export function valeurEstimee(compte) {
   const ref = referencePlacement(compte);
   let valeur = ref.valeur;
   for (const v of etat.virements) {
-    if (momentDe(v.id) <= ref.moment) continue;
+    if (v.creeLe <= ref.moment) continue;
     if (v.versId === compte.id) valeur += v.montant;
     if (v.depuisId === compte.id) valeur -= v.montant;
   }
@@ -51,7 +50,18 @@ export function calculerSolde(compteId) {
     if (v.depuisId === compteId) solde -= v.montant;
     if (v.versId === compteId) solde += v.montant;
   }
+  solde += totalAjustements(compteId);
   return solde;
+}
+
+// Total des ajustements de solde d'un compte (jusqu'à une date incluse, si elle est précisée).
+// Un ajustement corrige le solde sans être une dépense ni un revenu.
+export function totalAjustements(compteId, jusquau) {
+  let total = 0;
+  for (const a of etat.ajustements || []) {
+    if (a.compteId === compteId && (!jusquau || a.date <= jusquau)) total += a.montant;
+  }
+  return total;
 }
 
 const ORDRE_TYPES = ["livret", "pea", "assurance-vie", "courant"];

@@ -4,7 +4,6 @@ import { comptesActifs, estPlacement } from "./comptes.js";
 import { dateDuMoment, joursDepuis } from "./dates.js";
 import { premiereUtilisation } from "./epargne.js";
 import { etat } from "./etat.js";
-import { momentDe } from "./outils.js";
 
 const JOURS_RAPPEL_EXPORT = 30;
 
@@ -30,7 +29,7 @@ export function rappels() {
     for (const v of etat.valorisations) {
       if (v.compteId === c.id && (!derniere || v.date > derniere)) derniere = v.date;
     }
-    if (!derniere && momentDe(c.id) > 1e12) derniere = dateDuMoment(momentDe(c.id));
+    if (!derniere && c.creeLe > 1e12) derniere = dateDuMoment(c.creeLe);
     if (derniere && joursDepuis(derniere) >= JOURS_RAPPEL_VALEUR) {
       anciens.push({ compte: c, jours: joursDepuis(derniere) });
     }

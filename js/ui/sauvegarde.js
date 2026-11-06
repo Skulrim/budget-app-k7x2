@@ -1,7 +1,7 @@
 // Export et import de la sauvegarde JSON.
 
 import { aujourdhui } from "../noyau/dates.js";
-import { etat, sauvegarder } from "../noyau/etat.js";
+import { etat, migrerCreeLe, sauvegarder } from "../noyau/etat.js";
 import { etatValide } from "../noyau/validation.js";
 import { rafraichir } from "../rendu.js";
 import { afficherRappels } from "./rappels.js";
@@ -30,7 +30,8 @@ function importerSauvegarde(fichier) {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
       if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [] }, donnees.etat);
+      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [], ajustements: [] }, donnees.etat);
+      migrerCreeLe();
       sauvegarder();
       remplirChoixComptes();
       remplirChoixCategories();

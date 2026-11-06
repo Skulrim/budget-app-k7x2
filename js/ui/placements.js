@@ -1,7 +1,7 @@
 // Onglet Placements : saisie et historique des valorisations.
 
 import { etat, sauvegarder } from "../noyau/etat.js";
-import { centimesVersEuros, echapper, eurosVersCentimes, momentDe } from "../noyau/outils.js";
+import { centimesVersEuros, echapper, eurosVersCentimes, nouvelEnregistrement } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { supprimerAvecAnnulation } from "./notifications.js";
 
@@ -19,7 +19,7 @@ function enregistrerValorisation() {
   }
   message.textContent = "";
   etat.valorisations.push({
-    id: "p" + Date.now(),
+    ...nouvelEnregistrement("p"),
     compteId: compteId,
     date: new Date().toLocaleDateString("sv-SE"),
     valeur: valeur
@@ -33,7 +33,7 @@ export function afficherValorisations() {
   const zone = document.getElementById("liste-valorisations");
   zone.innerHTML = "";
   const recentes = [...etat.valorisations]
-    .sort((a, b) => momentDe(b.id) - momentDe(a.id))
+    .sort((a, b) => b.creeLe - a.creeLe)
     .slice(0, 10);
   for (const v of recentes) {
     const compte = etat.comptes.find(c => c.id === v.compteId);
