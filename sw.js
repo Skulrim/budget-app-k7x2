@@ -1,4 +1,4 @@
-const VERSION = "budget-v7";
+const VERSION = "budget-v8";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
@@ -11,6 +11,8 @@ const FICHIERS = [
   "./js/noyau/epargne.js",
   "./js/noyau/etat.js",
   "./js/noyau/operations.js",
+  "./js/noyau/prevision.js",
+  "./js/noyau/previsionBudgets.js",
   "./js/noyau/outils.js",
   "./js/noyau/rappels.js",
   "./js/noyau/recurrences.js",
@@ -29,6 +31,7 @@ const FICHIERS = [
   "./js/ui/notifications.js",
   "./js/ui/operations.js",
   "./js/ui/placements.js",
+  "./js/ui/prevision.js",
   "./js/ui/rappels.js",
   "./js/ui/recurrences.js",
   "./js/ui/saisie.js",

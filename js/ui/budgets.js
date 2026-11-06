@@ -1,14 +1,27 @@
-// Écran des budgets : jauges, carte « il te reste », création et retrait.
+// Écran des budgets : jauges, prévision de fin de mois par budget, création et retrait.
 
 import { iconeCategorie, nomCategorie } from "../noyau/categories.js";
-import { porteeDuCompte } from "../noyau/comptes.js";
-import { joursRestants, moisCourant } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { SEUIL_ALERTE, depenseDuMois } from "../noyau/operations.js";
 import { centimesVersEuros, echapper, eurosVersCentimes } from "../noyau/outils.js";
+import { JOUR_MIN_PREVISION, previsionBudget } from "../noyau/previsionBudgets.js";
 import { rafraichir } from "../rendu.js";
 import { cliquerBudget } from "./mouvements.js";
 import { supprimerAvecAnnulation } from "./notifications.js";
+
+// Ligne « fin de mois » d'une carte de budget
+function textePrevision(b) {
+  const { prevision, mode } = previsionBudget(b);
+  if (prevision === null) {
+    return `<small class="variation">Prévision de fin de mois dès le ${JOUR_MIN_PREVISION} du mois</small>`;
+  }
+  if (prevision === 0) return "";
+  const precision = mode === "recurrent" ? "récurrents inclus" : "au rythme actuel";
+  if (prevision > b.montant) {
+    return `<small class="variation hausse">Fin de mois (${precision}) : ${centimesVersEuros(prevision)}, dépassement prévu de ${centimesVersEuros(prevision - b.montant)}</small>`;
+  }
+  return `<small class="variation">Fin de mois (${precision}) : ${centimesVersEuros(prevision)}, dans le plafond</small>`;
+}
 
 export function afficherBudgets() {
   for (const portee of ["perso", "commun"]) {
@@ -34,51 +47,10 @@ export function afficherBudgets() {
             <div class="jauge-remplie ${alerte ? "alerte" : ""}" data-pct="${pct}" style="width:${pct}%"></div>
           </div>
           ${alerte ? `<small class="texte-alerte">${texte}</small>` : ""}
+          ${textePrevision(b)}
         </div>`;
     }
   }
-}
-
-export function afficherReste() {
-  let prevu = 0, depense = 0;
-  for (const b of etat.budgets) {
-    prevu += b.montant;
-    depense += depenseDuMois(b.portee, b.categorie);
-  }
-    const budgetes = new Set(etat.budgets.map(b => b.portee + ":" + b.categorie));
-  const comptees = new Set();
-  for (const r of etat.recurrentes) {
-    if (r.sens !== "depense" || r.debut > moisCourant()) continue;
-    const compte = etat.comptes.find(c => c.id === r.compteId);
-    if (!compte || compte.archive) continue;
-    const portee = porteeDuCompte(r.compteId);
-    const cle = portee + ":" + r.categorie;
-    if (budgetes.has(cle)) continue;
-    prevu += r.montant;
-    if (!comptees.has(cle)) {
-      comptees.add(cle);
-      depense += depenseDuMois(portee, r.categorie);
-    }
-  }
-  const reste = prevu - depense;
-  const ratio = prevu > 0 ? Math.min(1, depense / prevu) : 0;
-  const circonference = 2 * Math.PI * 40;
-  const trait = ratio * circonference;
-  document.getElementById("carte-reste").innerHTML = `
-    <div class="anneau">
-      <svg width="96" height="96" viewBox="0 0 96 96">
-        <circle class="piste" cx="48" cy="48" r="40" fill="none" stroke-width="9"/>
-        <circle class="trait" cx="48" cy="48" r="40" fill="none" stroke-width="9"
-          stroke-linecap="round" stroke-dasharray="${trait} ${circonference}"
-          data-trait="${trait}" data-circ="${circonference}"/>
-      </svg>
-      <b>${Math.round(ratio * 100)} %</b>
-    </div>
-    <div>
-      <div class="petit">${reste >= 0 ? "Il te reste" : "Tu dépasses de"}</div>
-      <div class="gros">${centimesVersEuros(Math.abs(reste))}</div>
-      <div class="petit">sur ${centimesVersEuros(prevu)} · ${joursRestants()} jours restants</div>
-    </div>`;
 }
 
 function enregistrerBudget() {
