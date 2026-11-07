@@ -130,6 +130,11 @@ function suivreChangements(initial) {
         x.modifieLe = maintenant;
         modifie = true;
       }
+      // Enregistrement sans date (ex. sauvegarde ancienne importée) : on lui en donne une
+      if (!Number.isInteger(x.modifieLe)) {
+        x.modifieLe = Number.isInteger(x.creeLe) ? x.creeLe : 0;
+        modifie = true;
+      }
       empreintes.set(ref, texte);
     }
   }
