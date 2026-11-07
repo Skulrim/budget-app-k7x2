@@ -84,7 +84,7 @@ export const NOMS_TYPES = {
 };
 
 export function comptesActifs() {
-  return etat.comptes.filter(c => !c.archive);
+  return etat.comptes.filter(c => !c.archive && c.type !== "externe");
 }
 
 export function totalPar(filtre) {

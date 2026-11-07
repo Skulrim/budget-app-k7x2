@@ -90,7 +90,7 @@ export function serieEpargne() {
     const date = m + "-" + String(dernierJourDuMois(m)).padStart(2, "0");
     let total = 0;
     for (const c of etat.comptes) {
-      if (c.type !== "courant") total += soldeAu(c, date);
+      if (c.type !== "courant" && c.type !== "externe") total += soldeAu(c, date);
     }
     return { mois: m, valeur: total };
   });

@@ -9,7 +9,7 @@ export function aValider() {
     const ids = r.type === "virement" ? [r.depuisId, r.versId] : [r.compteId];
     const indisponible = ids.some(id => {
       const c = etat.comptes.find(x => x.id === id);
-      return !c || c.archive;
+      return !c || c.archive || c.type === "externe";
     });
     if (indisponible) continue;
     for (const mois of moisEntre(r.debut, moisCourant())) {

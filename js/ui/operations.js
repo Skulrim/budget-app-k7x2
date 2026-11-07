@@ -22,12 +22,19 @@ export function ligneOperation(op) {
 export function ligneVirement(v) {
   const depuis = etat.comptes.find(c => c.id === v.depuisId);
   const vers = etat.comptes.find(c => c.id === v.versId);
+  // Versement venu de l'autre personne (compte « externe » de l'espace commun) : lecture seule
+  const miroir = depuis.type === "externe" || vers.type === "externe";
+  const edit = miroir ? "" : ` data-edit-virement="${v.id}"`;
+  const cliquable = miroir ? "" : "cliquable";
+  const bouton = miroir
+    ? `<i style="width:32px;flex:none"></i>`
+    : `<button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>`;
   return `
     <div class="op">
-      <i class="pastille cliquable" data-edit-virement="${v.id}">↔️</i>
-      <div class="cliquable" data-edit-virement="${v.id}">Virement<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
-      <span class="cliquable" data-edit-virement="${v.id}">${centimesVersEuros(v.montant)}</span>
-      <button class="supprimer" data-id="${v.id}" data-type="virement" aria-label="Supprimer">✕</button>
+      <i class="pastille ${cliquable}"${edit}>↔️</i>
+      <div class="${cliquable}"${edit}>${miroir ? "Versement" : "Virement"}<small>${v.date} · ${echapper(depuis.nom)} → ${echapper(vers.nom)}</small>${v.note ? `<small>${echapper(v.note)}</small>` : ""}</div>
+      <span class="${cliquable}"${edit}>${centimesVersEuros(v.montant)}</span>
+      ${bouton}
     </div>`;
 }
 

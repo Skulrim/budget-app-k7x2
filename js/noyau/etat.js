@@ -1,5 +1,6 @@
 // L'état de l'appli (comptes, opérations, budgets…) et sa sauvegarde dans le navigateur.
 
+import { espaceDe, idsCommun } from "./espaces.js";
 import { momentDe } from "./outils.js";
 
 export const etat = {
@@ -95,6 +96,7 @@ export function migrerCreeLe() {
 export const LISTES_SUIVIES = [...LISTES_AVEC_ID, "categories", "budgets"];
 const AGE_MAX_SUPPRESSION = 180 * 24 * 3600 * 1000;
 const empreintes = new Map(); // "liste|clé" -> contenu de l'enregistrement (sans modifieLe)
+const espaces = new Map();    // "liste|clé" -> "perso", "commun" ou "mixte"
 
 export function cleDe(liste, x) {
   return liste === "budgets" ? x.portee + ":" + x.categorie : x.id;
@@ -111,11 +113,13 @@ function suivreChangements(initial) {
   let modifie = false;
   if (!Array.isArray(etat.suppressions)) etat.suppressions = [];
   const vus = new Set();
+  const communs = idsCommun(etat.comptes);
   for (const liste of LISTES_SUIVIES) {
     for (const x of etat[liste] || []) {
       const cle = cleDe(liste, x);
       const ref = liste + "|" + cle;
       vus.add(ref);
+      espaces.set(ref, espaceDe(liste, x, communs));
       const texte = JSON.stringify(x, sansModif);
       const avant = empreintes.get(ref);
       if (avant === undefined) {
@@ -141,8 +145,10 @@ function suivreChangements(initial) {
   for (const ref of [...empreintes.keys()]) {
     if (vus.has(ref)) continue;
     empreintes.delete(ref);
+    const espace = espaces.get(ref) || "perso";
+    espaces.delete(ref);
     const [liste, ...reste] = ref.split("|");
-    etat.suppressions.push({ liste: liste, cle: reste.join("|"), le: maintenant });
+    etat.suppressions.push({ liste: liste, cle: reste.join("|"), le: maintenant, espace: espace });
     modifie = true;
   }
   const avantNettoyage = etat.suppressions.length;
@@ -173,6 +179,7 @@ export function appliquerChangementDistant(liste, cle, donnee, modifieLe) {
     if (i === -1) return false;
     tableau.splice(i, 1);
     empreintes.delete(ref);
+    espaces.delete(ref);
     return true;
   }
   const nouveau = { ...donnee, modifieLe: modifieLe };
@@ -181,4 +188,19 @@ export function appliquerChangementDistant(liste, cle, donnee, modifieLe) {
   empreintes.set(ref, JSON.stringify(nouveau, sansModif));
   etat.suppressions = etat.suppressions.filter(s => !(s.liste === liste && s.cle === cle));
   return true;
+}
+
+// Espace d'un enregistrement : "perso", "commun" (partagé) ou "mixte" (virement entre un compte perso et un compte commun)
+export function espaceConnu(liste, cle) {
+  return espaces.get(liste + "|" + cle);
+}
+
+export function referencesParEspace(espace) {
+  const refs = [];
+  for (const [ref, e] of espaces) {
+    if (e !== espace) continue;
+    const [liste, ...reste] = ref.split("|");
+    refs.push({ liste: liste, cle: reste.join("|") });
+  }
+  return refs;
 }

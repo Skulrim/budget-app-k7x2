@@ -4,16 +4,17 @@ import { echapper } from "../noyau/outils.js";
 import { rafraichirTout } from "../rendu.js";
 import { connecter, deconnecter, demarrerAuth, estConfigure, utilisateur } from "../synchro/auth.js";
 import { arreterCloud, demarrerCloud, relancer } from "../synchro/cloud.js";
-import { remplirChoixComptes } from "./selecteurs.js";
+import { remplirChoixCategories, remplirChoixComptes } from "./selecteurs.js";
 
 let texteCloud = "";
 
 const TEXTES_CLOUD = {
   "synchro": "Synchronisation en cours…",
   "hors-ligne": "Hors connexion : tes changements seront envoyés plus tard.",
-  "refus": "Accès refusé : vérifie que les règles de sécurité Firestore sont publiées.",
+  "refus": "Accès refusé : vérifie que les règles de sécurité Firestore sont publiées (et que ton compte y figure).",
   "erreur": "Erreur de synchronisation : vérifie que la base Firestore est créée, puis réessaie.",
-  "autre-compte": "Cet appareil contient les données d'un autre compte : synchronisation désactivée."
+  "autre-compte": "Cet appareil contient les données d'un autre compte : synchronisation désactivée.",
+  "commun-refuse": "Espace commun non rejoint : les données du commun restent locales sur cet appareil."
 };
 
 function messageErreur(e) {
@@ -59,13 +60,18 @@ function surStatutCloud(code) {
 // Des données venues du cloud ont été appliquées : on redessine tout
 function surMiseAJour() {
   remplirChoixComptes();
+  remplirChoixCategories();
   rafraichirTout();
 }
 
 function surChangementAuth(u) {
   if (u) {
-    demarrerCloud(u.uid, { statut: surStatutCloud, miseAJour: surMiseAJour })
-      .catch(() => surStatutCloud("erreur"));
+    demarrerCloud({ uid: u.uid, email: u.email }, {
+      statut: surStatutCloud,
+      miseAJour: surMiseAJour,
+      confirmer: (texte) => confirm(texte),
+      alerte: (texte) => alert(texte)
+    }).catch(() => surStatutCloud("erreur"));
   } else {
     arreterCloud();
     texteCloud = "";

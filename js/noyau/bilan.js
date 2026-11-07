@@ -17,6 +17,7 @@ export function calculerBilan(mois) {
     if (!v.date.startsWith(mois)) continue;
     const de = etat.comptes.find(c => c.id === v.depuisId);
     const vers = etat.comptes.find(c => c.id === v.versId);
+    if (de.type === "externe" || vers.type === "externe") continue; // versement venu de l'espace commun
     if (de.type === "courant" && vers.type !== "courant") epargne += v.montant;
     if (de.type !== "courant" && vers.type === "courant") epargne -= v.montant;
   }

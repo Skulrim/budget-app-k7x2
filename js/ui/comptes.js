@@ -65,7 +65,7 @@ export function afficherGestionComptes() {
   const archives = document.getElementById("comptes-archives");
   actifs.innerHTML = "";
   archives.innerHTML = "";
-  for (const c of etat.comptes) {
+  for (const c of etat.comptes.filter(c => c.type !== "externe")) {
     const ligne = `
       <div class="op">
         <div>${echapper(c.nom)}<small>${echapper(NOMS_TYPES[c.type] || c.type)}</small></div>
