@@ -2,7 +2,7 @@
 
 import { moisCourant, nomMois } from "../noyau/dates.js";
 import { etat } from "../noyau/etat.js";
-import { SEUIL_ALERTE, entreesPour, moisAvecMouvements, texteRecherche } from "../noyau/operations.js";
+import { entreesPour, moisAvecMouvements, texteRecherche } from "../noyau/operations.js";
 import { centimesVersEuros, echapper, ligneMontant, normaliser, somme } from "../noyau/outils.js";
 import { afficherVue, retourner } from "./navigation.js";
 import { ligneOperation, ligneVirement, supprimerOperation } from "./operations.js";
@@ -51,7 +51,7 @@ export function afficherMouvements() {
     const pct = Math.min(100, Math.round(ratio * 100));
     resume += `
       <div class="ligne"><span>Plafond du mois</span><strong>${centimesVersEuros(budget.montant)}</strong></div>
-      <div class="jauge"><div class="jauge-remplie ${ratio >= SEUIL_ALERTE ? "alerte" : ""}" style="width:${pct}%"></div></div>`;
+      <div class="jauge"><div class="jauge-remplie ${ratio > 1 ? "alerte" : ""}" style="width:${pct}%"></div></div>`;
   }
   document.getElementById("mouvements-total").innerHTML = resume;
 

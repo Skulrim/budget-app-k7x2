@@ -31,10 +31,18 @@ export function afficherBudgets() {
       const depense = depenseDuMois(b.portee, b.categorie);
       const ratio = depense / b.montant;
       const pct = Math.min(100, Math.round(ratio * 100));
-      const alerte = ratio >= SEUIL_ALERTE;
-      let texte = "Presque au plafond";
-      if (depense > b.montant) texte = "Plafond dépassé de " + centimesVersEuros(depense - b.montant);
-      else if (depense === b.montant) texte = "Plafond atteint : il ne reste rien";
+      // Rouge seulement si on dépasse. Pile au plafond = réussi. Proche = simple avertissement discret.
+      let classeJauge = "", classeTexte = "", texte = "";
+      if (depense > b.montant) {
+        classeJauge = "alerte"; classeTexte = "texte-alerte";
+        texte = "Plafond dépassé de " + centimesVersEuros(depense - b.montant);
+      } else if (depense === b.montant) {
+        classeTexte = "succes";
+        texte = "✓ Plafond atteint, bien respecté";
+      } else if (ratio >= SEUIL_ALERTE) {
+        classeJauge = "proche"; classeTexte = "variation";
+        texte = "Presque au plafond";
+      }
       zone.innerHTML += `
                 <div class="budget cliquable" data-detail="${b.portee}:${echapper(b.categorie)}">
           <div class="budget-ligne">
@@ -44,9 +52,9 @@ export function afficherBudgets() {
                 aria-label="Retirer ce budget">✕</button></span>
           </div>
           <div class="jauge">
-            <div class="jauge-remplie ${alerte ? "alerte" : ""}" data-pct="${pct}" style="width:${pct}%"></div>
+            <div class="jauge-remplie ${classeJauge}" data-pct="${pct}" style="width:${pct}%"></div>
           </div>
-          ${alerte ? `<small class="texte-alerte">${texte}</small>` : ""}
+          ${texte ? `<small class="${classeTexte}">${texte}</small>` : ""}
           ${textePrevision(b)}
         </div>`;
     }

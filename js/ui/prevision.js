@@ -25,7 +25,7 @@ function dessinerPrevision(portee, idZone, vide) {
   const zone = document.getElementById(idZone);
   const p = calculerPrevision(portee);
   if (!p.aDesComptes) {
-    zone.innerHTML = `<div class="mu">${vide}</div>`;
+    zone.innerHTML = `<div class="mu prev-corps">${vide}</div>`;
     return;
   }
   const date = new Date(p.fin + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
@@ -57,8 +57,9 @@ function dessinerPrevision(portee, idZone, vide) {
   if (p.revenus > 0) origine += " + " + centimesVersEuros(p.revenus) + " de revenus";
   if (entrees > 0) origine += " + " + centimesVersEuros(entrees) + " de virements";
 
+  // Bandeau du haut : couleur du thème (rouge d'alerte si découvert prévu) ; détail en dessous
   zone.innerHTML = `
-    <div class="prev-haut">
+    <div class="hero prev-hero${negatif ? " negatif" : ""}">
       <div class="prev-anneau">
         <svg viewBox="0 0 96 96" aria-hidden="true">
           <circle class="piste" cx="48" cy="48" r="40" fill="none" stroke-width="9"/>
@@ -69,17 +70,19 @@ function dessinerPrevision(portee, idZone, vide) {
         <div class="prev-anneau-texte"><b>${Math.round(p.ratioBudgets * 100)} %</b><small>budgets</small></div>
       </div>
       <div>
-        <div class="mu">Trésorerie prévue le ${date}</div>
-        <div class="prev-montant${negatif ? " texte-alerte" : ""}">${centimesVersEuros(p.prevu)}</div>
+        <div class="petit">Trésorerie prévue le ${date}</div>
+        <div class="prev-montant">${centimesVersEuros(p.prevu)}</div>
         <span class="pastille-etat${negatif ? " alerte" : ""}">${negatif ? "Découvert prévu" : "Dans le vert"}</span>
         <small class="mu-droite"> ${textePeriode()}</small>
       </div>
     </div>
-    <div class="prev-barre">${barre}</div>
-    <div class="mu">Où va l'argent d'ici fin de mois (${origine})</div>
-    <div class="legende">${legende}</div>
-    ${negatif ? `<small class="variation hausse">Il manque ${centimesVersEuros(-p.prevu)} pour couvrir les dépenses prévues.</small>` : ""}
-    <div class="mu">Hypothèse prudente : tu dépenses jusqu'au plafond de chaque budget. Les catégories sans budget ne sont pas estimées.</div>`;
+    <div class="prev-corps">
+      <div class="prev-barre">${barre}</div>
+      <div class="mu">Où va l'argent d'ici fin de mois (${origine})</div>
+      <div class="legende">${legende}</div>
+      ${negatif ? `<small class="variation hausse">Il manque ${centimesVersEuros(-p.prevu)} pour couvrir les dépenses prévues.</small>` : ""}
+      <div class="mu">Hypothèse prudente : tu dépenses jusqu'au plafond de chaque budget. Les catégories sans budget ne sont pas estimées.</div>
+    </div>`;
 }
 
 export function afficherPrevision() {

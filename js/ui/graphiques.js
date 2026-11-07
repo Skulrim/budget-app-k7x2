@@ -35,12 +35,6 @@ export function afficherAnneaux() {
     if (reste > 0) parts.push({ categorie: null, montant: reste });
 
     const comp = comparaisonMoisPrecedent(portee);
-    const globale = texteVariation(total, comp.total);
-    const resume = globale
-      ? `<div class="mu">Le ${jourTexte(comp.jour)} : ${centimesVersEuros(total)}, contre ${centimesVersEuros(comp.total)}
-          le ${jourTexte(comp.jourPrecedent)} du mois dernier
-          (<b class="${globale.classe}">${globale.texte}</b>).</div>`
-      : `<div class="mu">Aucune dépense à la même date le mois dernier : pas de comparaison.</div>`;
     const categoriesAutres = lignes.slice(5).map(l => l.categorie);
 
     const R = 40;
@@ -66,7 +60,8 @@ export function afficherAnneaux() {
         : (comp.parCategorie[p.categorie] || 0);
       const v = texteVariation(p.montant, avant);
       const variation = v
-        ? `<small class="variation ${v.classe}">${v.texte} vs mois dernier</small>` : "";
+        ? `<small class="variation ${v.classe}">${v.texte} vs mois dernier</small>`
+        : (avant === 0 && comp.total > 0 ? `<small class="variation">Nouveau ce mois-ci</small>` : "");
       const attr = p.categorie === null
         ? "" : ` cliquable" data-detail="${portee}:${echapper(p.categorie)}`;
       return `
@@ -82,7 +77,6 @@ export function afficherAnneaux() {
         <svg viewBox="0 0 100 100" aria-hidden="true">${cercles}</svg>
         <div class="donut-centre"><small>Dépensé</small><b>${eurosRonds(total)}</b></div>
       </div>
-      ${resume}
       <div class="legende">${legende}</div>`;
   }
 }
@@ -141,6 +135,17 @@ export function afficherHistogrammeMois() {
   const moyenne = passes.length > 0
     ? Math.round(passes.reduce((s, p) => s + p.total, 0) / passes.length) : null;
 
+  // Total du mois en cours comparé au mois précédent, arrêté au même jour (perso + commun)
+  const totalJour = serie[serie.length - 1].total;
+  const refs = ["perso", "commun"].map(p => comparaisonMoisPrecedent(p));
+  const totalPrec = refs[0].total + refs[1].total;
+  const vTotal = texteVariation(totalJour, totalPrec);
+  const comparaison = vTotal
+    ? `<div class="mu">Le ${jourTexte(refs[0].jour)} : ${centimesVersEuros(totalJour)}, contre ${centimesVersEuros(totalPrec)}
+        le ${jourTexte(refs[0].jourPrecedent)} du mois dernier
+        (<b class="${vTotal.classe}">${vTotal.texte}</b>).</div>`
+    : `<div class="mu">Aucune dépense à la même date le mois dernier : pas de comparaison.</div>`;
+
   const colonnes = serie.map(p => {
     const hauteur = p.total > 0 ? Math.max(4, Math.round(p.total / max * 100)) : 0;
     const [a, m] = p.mois.split("-").map(Number);
@@ -155,6 +160,7 @@ export function afficherHistogrammeMois() {
 
   zone.innerHTML = `
     <div class="histo">${colonnes}</div>
+    ${comparaison}
     ${moyenne !== null
       ? `<div class="mu">Moyenne des mois précédents : ${centimesVersEuros(moyenne)}. Le mois en cours (en couleur pleine) n'est pas terminé.</div>`
       : `<div class="mu">Le mois en cours (en couleur pleine) n'est pas terminé.</div>`}`;

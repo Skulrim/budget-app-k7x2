@@ -433,3 +433,30 @@ h2 {
   background: var(--piste); margin: 16px 0 8px;
 }
 .prev-barre i { display: block; height: 100%; }
+/* ===== Cartes de prévision en couleur + budgets ===== */
+#carte-prevision-commun, #carte-prevision-perso { padding: 0; overflow: hidden; }
+.prev-hero { margin: 0; border-radius: 0; box-shadow: none; }
+.prev-hero.negatif { background: var(--alerte); color: var(--texte-sur-accent); }
+.prev-hero .prev-anneau .piste { stroke: var(--anneau-piste); }
+.prev-hero .prev-anneau .trait { stroke: var(--anneau-trait); }
+.prev-hero .prev-anneau-texte small,
+.prev-hero .petit,
+.prev-hero .mu-droite { color: inherit; opacity: 0.8; }
+.prev-hero .pastille-etat { background: rgba(0, 0, 0, 0.18); color: inherit; }
+.prev-corps { padding: 16px; }
+.prev-corps .prev-barre { margin-top: 0; }
+.jauge-remplie.proche { background: var(--s4); }
+/* ===== Accueil : bandeau du total, couleurs par type, bloc repliable ===== */
+#carte-patrimoine { padding: 0; overflow: hidden; }
+.patrimoine-hero { margin: 0; border-radius: 0; box-shadow: none; padding: 20px 16px; }
+.patrimoine-hero .gros { color: inherit; font-size: 36px; }
+.hero-icone { margin-left: auto; font-size: 46px; font-style: normal; opacity: 0.85; }
+.corps-patrimoine .prev-barre { margin-top: 12px; }
+.ligne.groupe .point { margin-right: 6px; }
+.pastille.t-pea { background: color-mix(in srgb, var(--s1) 28%, var(--carte)); }
+.pastille.t-livret { background: color-mix(in srgb, var(--s2) 28%, var(--carte)); }
+.pastille.t-assurance-vie { background: color-mix(in srgb, var(--s3) 28%, var(--carte)); }
+.pastille.t-courant { background: color-mix(in srgb, var(--s4) 28%, var(--carte)); }
+.details-badges { margin-top: 24px; }
+.details-badges .patrimoine { border: none; box-shadow: none; padding: 0; margin-top: 0; }
+.details-badges .badges { margin-top: 8px; padding-bottom: 12px; }
