@@ -39,24 +39,29 @@ export const etat = {
   recurrentes: [],
   virements: [],
   valorisations: [],
-  ajustements: []
+  ajustements: [],
+  suppressions: []
 };
 
 const CLE = "budget-etat-v1";
 
 export function sauvegarder() {
+  suivreChangements(false);
   try {
     localStorage.setItem(CLE, JSON.stringify(etat));
   } catch (e) {
     console.error("Sauvegarde impossible", e);
   }
+  for (const f of ecouteurs) f();
 }
 
 export function charger() {
   try {
     const texte = localStorage.getItem(CLE);
     if (texte) Object.assign(etat, JSON.parse(texte));
-    if (migrerCreeLe()) sauvegarder();
+    const migre = migrerCreeLe();
+    const suivi = suivreChangements(true);
+    if (migre || suivi) sauvegarder();
   } catch (e) {
     console.error("Lecture impossible", e);
   }
@@ -79,4 +84,96 @@ export function migrerCreeLe() {
     }
   }
   return modifie;
+}
+
+// ===== Suivi des modifications (préparation de la synchronisation) =====
+// Chaque enregistrement suivi reçoit modifieLe (ms) à chaque création ou changement.
+// Chaque suppression laisse une trace dans etat.suppressions, pour qu'un autre appareil
+// sache qu'il faut supprimer aussi (au lieu de ressusciter la donnée).
+// Tout passe par sauvegarder() : aucun autre module n'a besoin d'être modifié.
+
+export const LISTES_SUIVIES = [...LISTES_AVEC_ID, "categories", "budgets"];
+const AGE_MAX_SUPPRESSION = 180 * 24 * 3600 * 1000;
+const empreintes = new Map(); // "liste|clé" -> contenu de l'enregistrement (sans modifieLe)
+
+export function cleDe(liste, x) {
+  return liste === "budgets" ? x.portee + ":" + x.categorie : x.id;
+}
+
+function sansModif(cle, valeur) {
+  return cle === "modifieLe" ? undefined : valeur;
+}
+
+// initial = true au chargement : on prend l'état actuel comme point de départ, sans le marquer modifié.
+// Renvoie true si des champs ont été ajoutés ou changés (il faut alors sauvegarder).
+function suivreChangements(initial) {
+  const maintenant = Date.now();
+  let modifie = false;
+  if (!Array.isArray(etat.suppressions)) etat.suppressions = [];
+  const vus = new Set();
+  for (const liste of LISTES_SUIVIES) {
+    for (const x of etat[liste] || []) {
+      const cle = cleDe(liste, x);
+      const ref = liste + "|" + cle;
+      vus.add(ref);
+      const texte = JSON.stringify(x, sansModif);
+      const avant = empreintes.get(ref);
+      if (avant === undefined) {
+        if (!Number.isInteger(x.modifieLe)) {
+          x.modifieLe = initial ? (Number.isInteger(x.creeLe) ? x.creeLe : 0) : maintenant;
+          modifie = true;
+        }
+        if (!initial) {
+          etat.suppressions = etat.suppressions.filter(s => !(s.liste === liste && s.cle === cle));
+        }
+      } else if (avant !== texte) {
+        x.modifieLe = maintenant;
+        modifie = true;
+      }
+      empreintes.set(ref, texte);
+    }
+  }
+  for (const ref of [...empreintes.keys()]) {
+    if (vus.has(ref)) continue;
+    empreintes.delete(ref);
+    const [liste, ...reste] = ref.split("|");
+    etat.suppressions.push({ liste: liste, cle: reste.join("|"), le: maintenant });
+    modifie = true;
+  }
+  const avantNettoyage = etat.suppressions.length;
+  etat.suppressions = etat.suppressions.filter(s => s.le > maintenant - AGE_MAX_SUPPRESSION);
+  if (etat.suppressions.length !== avantNettoyage) modifie = true;
+  return modifie;
+}
+
+// ===== Branchement de la synchronisation =====
+
+const ecouteurs = [];
+
+// La synchronisation s'inscrit ici pour être prévenue après chaque sauvegarde locale
+export function surSauvegarde(fonction) {
+  ecouteurs.push(fonction);
+}
+
+// Applique un changement venu du cloud sans le compter comme une modification locale
+// (pas de nouvelle date, pas de trace de suppression, donc pas de renvoi inutile).
+// donnee = null : supprime l'enregistrement. Renvoie true si l'état a changé.
+export function appliquerChangementDistant(liste, cle, donnee, modifieLe) {
+  if (!LISTES_SUIVIES.includes(liste)) return false;
+  if (!Array.isArray(etat[liste])) etat[liste] = [];
+  const tableau = etat[liste];
+  const i = tableau.findIndex(x => cleDe(liste, x) === cle);
+  const ref = liste + "|" + cle;
+  if (donnee === null) {
+    if (i === -1) return false;
+    tableau.splice(i, 1);
+    empreintes.delete(ref);
+    return true;
+  }
+  const nouveau = { ...donnee, modifieLe: modifieLe };
+  if (i === -1) tableau.push(nouveau);
+  else tableau[i] = nouveau;
+  empreintes.set(ref, JSON.stringify(nouveau, sansModif));
+  etat.suppressions = etat.suppressions.filter(s => !(s.liste === liste && s.cle === cle));
+  return true;
 }

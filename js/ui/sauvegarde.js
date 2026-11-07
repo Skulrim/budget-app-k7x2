@@ -30,7 +30,7 @@ function importerSauvegarde(fichier) {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
       if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [], ajustements: [] }, donnees.etat);
+      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [], ajustements: [], suppressions: [] }, donnees.etat);
       migrerCreeLe();
       sauvegarder();
       remplirChoixComptes();
