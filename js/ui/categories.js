@@ -1,4 +1,4 @@
-// Réglages des catégories : ajout, recherche, suppression.
+// Réglages des catégories : ajout, recherche, modification (nom, icône), suppression.
 
 import { creerIdCategorie, iconeCategorie, trouverCategorieSimilaire } from "../noyau/categories.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
@@ -6,6 +6,9 @@ import { echapper, normaliser } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { supprimerAvecAnnulation } from "./notifications.js";
 import { remplirChoixBudget, remplirChoixCategories } from "./selecteurs.js";
+
+// Identifiant de la catégorie en cours de modification (null = aucune)
+let enEdition = null;
 
 function verifierNouvelleCategorie() {
   const nom = document.getElementById("categorie-nom").value;
@@ -32,12 +35,12 @@ function creerCategorie() {
     message.textContent = "Donne un nom à la catégorie";
     return;
   }
-   const { exacte } = trouverCategorieSimilaire(nom, sens, portee);
+  const { exacte } = trouverCategorieSimilaire(nom, sens, portee);
   if (exacte) {
     message.textContent = "« " + exacte.nom + " » existe déjà.";
     return;
   }
-    const icone = document.getElementById("categorie-icone").value.trim().slice(0, 12);
+  const icone = document.getElementById("categorie-icone").value.trim().slice(0, 12);
   const nouvelle = { id: creerIdCategorie(nom), nom: nom, sens: sens, portee: portee };
   if (icone) nouvelle.icone = icone;
   etat.categories.push(nouvelle);
@@ -63,11 +66,72 @@ export function afficherCategories() {
     zone.innerHTML = `<div class="mu">Aucune catégorie trouvée</div>`;
     return;
   }
-  zone.innerHTML = triees.map(c => `
-    <div class="op">
-      <div>${iconeCategorie(c.id)} ${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
-      <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
-    </div>`).join("");
+  zone.innerHTML = triees.map(c => {
+    if (c.id === enEdition) {
+      return `
+        <div class="op">
+          <div>
+            <div class="saisie">
+              <input id="edit-cat-nom" type="text" maxlength="40" value="${echapper(c.nom)}" placeholder="Nom">
+              <input id="edit-cat-icone" type="text" maxlength="12" value="${iconeCategorie(c.id)}" placeholder="Icône (un emoji)">
+            </div>
+            <div class="actions-rec">
+              <button type="button" class="lien-action" data-cat-ok="${echapper(c.id)}">Enregistrer</button>
+              <button type="button" class="lien-action" data-cat-annuler="1">Annuler</button>
+            </div>
+            <small id="message-edit-cat" class="mu"></small>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="op">
+        <div>${iconeCategorie(c.id)} ${echapper(c.nom)}<small>${c.sens === "revenu" ? "Revenu" : "Dépense"} · ${NOMS_PORTEE[c.portee] || c.portee}</small></div>
+        <button class="supprimer" data-cat-edit="${echapper(c.id)}" aria-label="Modifier la catégorie">✎</button>
+        <button class="supprimer" data-cat="${echapper(c.id)}" aria-label="Supprimer la catégorie">✕</button>
+      </div>`;
+  }).join("");
+}
+
+// Le nom et l'icône changent, l'identifiant reste le même : opérations, budgets
+// et récurrences qui pointent vers cette catégorie la suivent automatiquement.
+function enregistrerEdition(id) {
+  const c = etat.categories.find(x => x.id === id);
+  if (!c) return;
+  const nom = document.getElementById("edit-cat-nom").value.trim();
+  const icone = document.getElementById("edit-cat-icone").value.trim().slice(0, 12);
+  const message = document.getElementById("message-edit-cat");
+  if (nom === "") {
+    message.textContent = "Donne un nom à la catégorie";
+    return;
+  }
+  const { exacte } = trouverCategorieSimilaire(nom, c.sens, c.portee);
+  if (exacte && exacte.id !== id) {
+    message.textContent = "« " + exacte.nom + " » existe déjà.";
+    return;
+  }
+  c.nom = nom;
+  if (icone) c.icone = icone;
+  else delete c.icone;
+  enEdition = null;
+  sauvegarder();
+  remplirChoixCategories();
+  remplirChoixBudget();
+  rafraichir();
+}
+
+function gererEdition(e) {
+  const modifier = e.target.dataset.catEdit;
+  const valider = e.target.dataset.catOk;
+  const annuler = e.target.dataset.catAnnuler;
+  if (modifier) {
+    enEdition = modifier;
+    afficherCategories();
+  } else if (valider) {
+    enregistrerEdition(valider);
+  } else if (annuler) {
+    enEdition = null;
+    afficherCategories();
+  }
 }
 
 function supprimerCategorie(e) {
@@ -94,5 +158,6 @@ export function initCategories() {
   document.getElementById("categorie-portee").addEventListener("change", verifierNouvelleCategorie);
   document.getElementById("recherche-categorie").addEventListener("input", afficherCategories);
   document.getElementById("bouton-categorie").addEventListener("click", creerCategorie);
+  document.getElementById("liste-categories").addEventListener("click", gererEdition);
   document.getElementById("liste-categories").addEventListener("click", supprimerCategorie);
 }
