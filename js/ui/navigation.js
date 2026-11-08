@@ -31,6 +31,9 @@ export function afficherVue(nom) {
   for (const v of VUES) {
     document.getElementById("vue-" + v).hidden = (v !== nom);
   }
+    if (nom !== "reglages") {
+    for (const d of document.querySelectorAll("#vue-reglages details")) d.open = false;
+  }
   const actif = nom === "mouvements" ? vuePrecedente : nom;
   for (const b of document.querySelectorAll(".barre button")) {
     b.classList.toggle("actif", b.dataset.vue === actif);

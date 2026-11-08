@@ -1,13 +1,43 @@
 // Onglet Livrets : matelas de sécurité, plans d'épargne, objectifs d'achat.
 
-import { estPlacement, iconeType, totalPar } from "../noyau/comptes.js";
+import { comptesActifs, estPlacement, iconeType, totalPar } from "../noyau/comptes.js";
+import { moisCourant } from "../noyau/dates.js";
 import { totalEnveloppes, totalMisDeCote, virementsVersLeMois } from "../noyau/epargne.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { depensesMensuelles } from "../noyau/operations.js";
-import { centimesVersEuros, echapper, eurosVersCentimes, normaliser, nouvelEnregistrement } from "../noyau/outils.js";
+import { centimesVersEuros, echapper, eurosVersCentimes, ligneMontant, normaliser, nouvelEnregistrement } from "../noyau/outils.js";
 import { rafraichir } from "../rendu.js";
 import { montrerNotif, supprimerAvecAnnulation } from "./notifications.js";
 
+// Bandeau du haut : total des livrets et versements nets du mois
+export function afficherBandeauLivrets() {
+  const zone = document.getElementById("carte-livrets");
+  const livrets = comptesActifs().filter(c => c.type === "livret");
+  if (livrets.length === 0) {
+    zone.innerHTML = "";
+    return;
+  }
+  const ids = new Set(livrets.map(c => c.id));
+  const mois = moisCourant();
+  let flux = 0;
+  for (const v of etat.virements) {
+    if (!v.date.startsWith(mois)) continue;
+    if (ids.has(v.versId)) flux += v.montant;
+    if (ids.has(v.depuisId)) flux -= v.montant;
+  }
+  const signe = flux >= 0 ? "+" : "−";
+  const enveloppes = totalEnveloppes();
+  zone.innerHTML = `
+    <div class="hero patrimoine-hero">
+      <div>
+        <div class="petit">Total des livrets</div>
+        <div class="gros">${centimesVersEuros(totalPar(c => c.type === "livret"))}</div>
+        <div class="petit">${signe} ${centimesVersEuros(Math.abs(flux))} ce mois-ci (versements nets)</div>
+      </div>
+      <i class="hero-icone" aria-hidden="true">🐷</i>
+    </div>
+    ${enveloppes > 0 ? `<div class="prev-corps">${ligneMontant("Dont réservé à tes objectifs d'achat", enveloppes)}</div>` : ""}`;
+}
 export function afficherMatelas() {
   const zone = document.getElementById("carte-matelas");
   const mois = etat.reglages.moisMatelas;
@@ -37,6 +67,7 @@ export function afficherMatelas() {
 export function afficherObjectifs() {
   const zone = document.getElementById("liste-objectifs");
   const choix = document.getElementById("objectif-choix");
+    document.getElementById("bloc-mises").hidden = etat.objectifs.length === 0;
   const memoire = choix.value;
   zone.innerHTML = "";
   choix.innerHTML = "";

@@ -460,3 +460,8 @@ h2 {
 .details-badges { margin-top: 24px; }
 .details-badges .patrimoine { border: none; box-shadow: none; padding: 0; margin-top: 0; }
 .details-badges .badges { margin-top: 8px; padding-bottom: 12px; }
+/* ===== Onglet Placements : bandeau du total ===== */
+#carte-placements { padding: 0; overflow: hidden; }
+/* ===== Onglet Livrets : bandeau du total ===== */
+#carte-livrets { padding: 0; overflow: hidden; }
+#carte-livrets:empty { display: none; }
