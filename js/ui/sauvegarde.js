@@ -1,7 +1,8 @@
 // Export et import de la sauvegarde JSON.
 
 import { aujourdhui } from "../noyau/dates.js";
-import { etat, migrerCreeLe, sauvegarder } from "../noyau/etat.js";
+import { espaceDe, idsCommun } from "../noyau/espaces.js";
+import { LISTES_SUIVIES, etat, migrerCreeLe, sauvegarder } from "../noyau/etat.js";
 import { etatValide } from "../noyau/validation.js";
 import { rafraichir } from "../rendu.js";
 import { afficherRappels } from "./rappels.js";
@@ -22,6 +23,36 @@ export function exporterSauvegarde() {
   afficherRappels();
 }
 
+// Construit le nouvel état à partir de la sauvegarde.
+// Tout ce qui en vient reçoit la date d'aujourd'hui : elle fait foi face au cloud.
+// Sans avecCommun, le commun actuel (déjà synchronisé) est conservé tel quel.
+function etatRestaure(sauv, avecCommun) {
+  const maintenant = Date.now();
+  const resultat = { ...sauv, suppressions: etat.suppressions || [] };
+  const communsSauv = idsCommun(sauv.comptes);
+  const communsLocal = idsCommun(etat.comptes);
+  for (const liste of LISTES_SUIVIES) {
+    if (!Array.isArray(sauv[liste])) continue; // ancienne sauvegarde sans cette liste : on garde l'actuelle
+    const venantDeSauv = sauv[liste]
+      .filter(x => avecCommun || espaceDe(liste, x, communsSauv) !== "commun")
+      .map(x => ({ ...x, modifieLe: maintenant }));
+    const gardes = avecCommun ? [] : (etat[liste] || [])
+      .filter(x => espaceDe(liste, x, communsLocal) === "commun");
+    resultat[liste] = [...venantDeSauv, ...gardes];
+  }
+  // Virements perso → commun : on ne les garde que si les deux comptes existent encore
+  const idsComptes = new Set(resultat.comptes.map(c => c.id));
+  let ignores = 0;
+  for (const liste of ["virements", "recurrentes"]) {
+    resultat[liste] = resultat[liste].filter(x => {
+      const ok = ["depuisId", "versId"].every(k => x[k] === undefined || idsComptes.has(x[k]));
+      if (!ok) ignores++;
+      return ok;
+    });
+  }
+  return { resultat, ignores };
+}
+
 function importerSauvegarde(fichier) {
   const message = document.getElementById("message-sauvegarde");
   const lecteur = new FileReader();
@@ -29,14 +60,21 @@ function importerSauvegarde(fichier) {
     try {
       const donnees = JSON.parse(lecteur.result);
       if (!etatValide(donnees.etat)) throw new Error("format");
-      if (!confirm("Remplacer toutes les données actuelles par cette sauvegarde ?")) return;
-      Object.assign(etat, { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [], ajustements: [], suppressions: [] }, donnees.etat);
+      if (!confirm("Remplacer tes données perso par cette sauvegarde ?")) return;
+      const avecCommun = confirm("Restaurer AUSSI le compte commun ?\n\n"
+        + "OK = oui : à utiliser seulement si l'espace partagé est perdu. "
+        + "Ça efface ce que ta compagne a saisi depuis cette sauvegarde.\n\n"
+        + "Annuler = non : le commun reste tel qu'il est (recommandé).");
+      const base = { objectifs: [], misesDeCote: [], badges: [], bilansVus: [], plansEpargne: [], recurrentes: [], budgets: [], valorisations: [], ajustements: [], suppressions: [] };
+      const { resultat, ignores } = etatRestaure({ ...base, ...donnees.etat }, avecCommun);
+      Object.assign(etat, resultat);
       migrerCreeLe();
       sauvegarder();
       remplirChoixComptes();
       remplirChoixCategories();
       rafraichir();
-      message.textContent = "Sauvegarde importée";
+      message.textContent = "Sauvegarde importée"
+        + (ignores > 0 ? " (" + ignores + " virement(s) ignoré(s) : compte commun introuvable)" : "");
     } catch (e) {
       message.textContent = "Fichier non valide";
     }
