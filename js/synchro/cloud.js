@@ -181,7 +181,7 @@ function initialiserCommun(docs) {
 function ignorer(nom, doc) {
   if (nom !== "commun") return false;
   if (doc.data && doc.data.auteur === uidActif) return true;
-  if (doc.supprime && espaceConnu(doc.liste, doc.cle) === "mixte") return true;
+  if (doc.supprime && ["mixte", "perso"].includes(espaceConnu(doc.liste, doc.cle))) return true;
   return false;
 }
 

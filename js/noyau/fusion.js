@@ -95,6 +95,11 @@ export function fusionnerDistant(doc) {
     }
     data = { ...data, traites: toutes };
   }
+    // Compte « externe » (prénom de l'autre personne) : un changement de nom est toujours accepté
+  if (liste === "comptes" && data.type === "externe" && local && local.type === "externe") {
+    if (local.nom === data.nom) return false;
+    return appliquerChangementDistant(liste, cle, data, local.modifieLe);
+  }
   if (local && local.modifieLe >= modifieLe) return false;
   return appliquerChangementDistant(liste, cle, data, modifieLe);
 }

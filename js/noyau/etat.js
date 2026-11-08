@@ -119,7 +119,18 @@ function suivreChangements(initial) {
       const cle = cleDe(liste, x);
       const ref = liste + "|" + cle;
       vus.add(ref);
-      espaces.set(ref, espaceDe(liste, x, communs));
+      const espaceAvant = espaces.get(ref);
+      const espaceApres = espaceDe(liste, x, communs);
+      espaces.set(ref, espaceApres);
+      if (espaceAvant && espaceAvant !== espaceApres) {
+        // on annule une éventuelle suppression « commun » en attente (retour en arrière)
+        etat.suppressions = etat.suppressions.filter(s => !(s.liste === liste && s.cle === cle && s.espace === "commun"));
+        // virement qui n'est plus partagé : on demande d'effacer sa copie dans le commun
+        if (espaceAvant === "mixte" && espaceApres === "perso") {
+          etat.suppressions.push({ liste: liste, cle: cle, le: maintenant, espace: "commun" });
+          modifie = true;
+        }
+      }
       const texte = JSON.stringify(x, sansModif);
       const avant = empreintes.get(ref);
       if (avant === undefined) {
