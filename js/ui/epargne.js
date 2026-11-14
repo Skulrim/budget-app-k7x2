@@ -164,7 +164,7 @@ function dessinerPlans(idZone, filtre) {
     const c = etat.comptes.find(x => x.id === p.compteId);
     const fait = virementsVersLeMois(p.compteId);
     const ratio = fait / p.montant;
-    const pct = Math.min(100, Math.round(ratio * 100));
+    const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
     return `
       <div class="budget">
         <div class="budget-ligne">

@@ -18,8 +18,12 @@ export function totalMisDeCote(objectifId) {
 
 export function virementsVersLeMois(compteId, mois = moisCourant()) {
   return etat.virements
-    .filter(v => v.versId === compteId && v.date.startsWith(mois))
-    .reduce((somme, v) => somme + v.montant, 0);
+    .filter(v => v.date.startsWith(mois))
+    .reduce((somme, v) => {
+      if (v.versId === compteId) return somme + v.montant;
+      if (v.depuisId === compteId) return somme - v.montant;
+      return somme;
+    }, 0);
 }
 
 export function toutesLesDates() {
