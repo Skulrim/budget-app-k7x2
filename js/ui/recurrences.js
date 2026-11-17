@@ -88,6 +88,8 @@ function majChampsRecurrence() {
   const virement = document.getElementById("rec-type").value === "virement";
   document.getElementById("rec-champs-operation").hidden = virement;
   document.getElementById("rec-champs-virement").hidden = !virement;
+  const revenu = document.getElementById("rec-sens").value === "revenu";
+  document.getElementById("rec-usage").hidden = !(virement || revenu);
 }
 
 function enregistrerRecurrence() {
@@ -107,7 +109,10 @@ function enregistrerRecurrence() {
       message.textContent = "Choisis deux comptes différents";
       return;
     }
-    base = { type: "virement", depuisId: depuisId, versId: versId };
+    base = {
+      type: "virement", depuisId: depuisId, versId: versId,
+      pourMoisSuivant: document.getElementById("rec-usage").value === "suivant"
+    };
   } else {
     const compteId = document.getElementById("rec-compte").value;
     const categorie = document.getElementById("rec-categorie").value;
@@ -115,7 +120,11 @@ function enregistrerRecurrence() {
       message.textContent = "Choisis un compte et une catégorie";
       return;
     }
-    base = { compteId: compteId, sens: document.getElementById("rec-sens").value, categorie: categorie };
+    const sens = document.getElementById("rec-sens").value;
+    base = {
+      compteId: compteId, sens: sens, categorie: categorie,
+      pourMoisSuivant: sens === "revenu" && document.getElementById("rec-usage").value === "suivant"
+    };
   }
   if (isNaN(montant) || montant <= 0) {
     message.textContent = "Montant invalide";
@@ -210,4 +219,5 @@ export function initRecurrences() {
   });
   document.getElementById("bouton-recurrence").addEventListener("click", enregistrerRecurrence);
   document.getElementById("rec-type").addEventListener("change", majChampsRecurrence);
+  document.getElementById("rec-sens").addEventListener("change", majChampsRecurrence);
 }

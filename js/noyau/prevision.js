@@ -28,13 +28,14 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
       const de = compteActif(r.depuisId), vers = compteActif(r.versId);
       if (!de || !vers) continue;
       const sortie = dansLePerimetre(de), entree = dansLePerimetre(vers);
-      if (sortie === entree) continue; // sans effet sur ces comptes (ou hors périmètre)
+      if (sortie === entree) continue; // ne concerne pas cette portée (ou reste à l'intérieur)
+      if (r.pourMoisSuivant) continue; // fait à la paie, sert au mois suivant
       virements += entree ? r.montant : -r.montant;
     } else {
       const compte = compteActif(r.compteId);
       if (!compte || !dansLePerimetre(compte)) continue;
       if (r.sens === "revenu") {
-        revenus += r.montant;
+        if (!r.pourMoisSuivant) revenus += r.montant;
       } else {
         depenses += r.montant;
         recParCategorie[r.categorie] = (recParCategorie[r.categorie] || 0) + r.montant;

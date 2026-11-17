@@ -258,6 +258,10 @@
       <span class="mu">Vers</span>
       <select id="rec-vers"></select>
     </div>
+    <select id="rec-usage" hidden>
+      <option value="courant">Pour les dépenses de ce mois</option>
+      <option value="suivant">Sert à payer le mois suivant</option>
+    </select>
     <input id="rec-montant" type="text" inputmode="decimal" placeholder="Montant habituel (ex : 15,99)">
     <input id="rec-jour" type="number" min="1" max="31" inputmode="numeric" placeholder="Jour du mois (1 à 31)">
     <input id="rec-note" type="text" maxlength="80" placeholder="Note (facultative)">
