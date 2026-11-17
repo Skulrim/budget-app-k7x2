@@ -10,7 +10,7 @@ import { afficherCategories, initCategories } from "./ui/categories.js";
 import { afficherComptes, afficherGestionComptes, afficherPatrimoine, initComptes, majChampVerse } from "./ui/comptes.js";
 import { afficherBandeauLivrets, afficherMatelas, afficherMises, afficherObjectifs, afficherPlans, initEpargne } from "./ui/epargne.js";
 import { afficherAnneaux, afficherCourbeEpargne, afficherHistogrammeMois, initGraphiques } from "./ui/graphiques.js";
-import { afficherPrevision } from "./ui/prevision.js";
+import { afficherPrevision, initPrevision } from "./ui/prevision.js";
 import { afficherMouvements, initMouvements, remplirFiltresMouvements } from "./ui/mouvements.js";
 import { afficherVue, initNavigation } from "./ui/navigation.js";
 import { initNotifications } from "./ui/notifications.js";
@@ -85,6 +85,7 @@ initConnexion();
 initMouvements();
 initRecurrences();
 initGraphiques();
+initPrevision();
 
 // Démarrage (même ordre qu'avant le découpage)
 appliquerTheme(themeEnregistre());

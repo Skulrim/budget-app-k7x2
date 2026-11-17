@@ -16,36 +16,57 @@ function compteActif(id) {
 //   − ce qu'il reste à dépenser dans chaque budget de cette portée (plafond − déjà dépensé),
 //     sans recompter les dépenses récurrentes de la même catégorie, déjà prises plus haut.
 // Hypothèse prudente : on dépense jusqu'au plafond. Les catégories sans budget ne sont pas estimées.
+// Les lignes exclues pour ce mois (etat.exclusions) ne sont pas comptées, mais restent dans `detail`
+// (avec exclu: true) pour pouvoir les réintégrer depuis la fenêtre du calcul.
 export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
   const mois = dateDuJour.slice(0, 7);
+  const exclusions = new Set((etat.exclusions || [])
+    .filter(x => x.mois === mois).map(x => x.cle));
   const dansLePerimetre = c => c.type === "courant" && porteeDuCompte(c.id) === portee;
   const solde = totalPar(dansLePerimetre);
   let revenus = 0, depenses = 0, virements = 0;
   const recParCategorie = {};
+  const detail = { revenus: [], depenses: [], virements: [], budgets: [] };
   for (const r of etat.recurrentes) {
     if (r.debut > mois || r.traites.includes(mois)) continue;
+    const cle = "r:" + r.id;
+    const exclu = exclusions.has(cle);
     if (r.type === "virement") {
       const de = compteActif(r.depuisId), vers = compteActif(r.versId);
       if (!de || !vers) continue;
       const sortie = dansLePerimetre(de), entree = dansLePerimetre(vers);
       if (sortie === entree) continue; // ne concerne pas cette portée (ou reste à l'intérieur)
       if (r.pourMoisSuivant) continue; // fait à la paie, sert au mois suivant
-      virements += entree ? r.montant : -r.montant;
+      if (!exclu) virements += entree ? r.montant : -r.montant;
+      detail.virements.push({ cle: cle, exclu: exclu, depuis: de.nom, vers: vers.nom, montant: r.montant, entree: entree });
     } else {
       const compte = compteActif(r.compteId);
       if (!compte || !dansLePerimetre(compte)) continue;
       if (r.sens === "revenu") {
-        if (!r.pourMoisSuivant) revenus += r.montant;
+        if (r.pourMoisSuivant) continue;
+        if (!exclu) revenus += r.montant;
+        detail.revenus.push({ cle: cle, exclu: exclu, categorie: r.categorie, montant: r.montant });
       } else {
-        depenses += r.montant;
-        recParCategorie[r.categorie] = (recParCategorie[r.categorie] || 0) + r.montant;
+        if (!exclu) {
+          depenses += r.montant;
+          recParCategorie[r.categorie] = (recParCategorie[r.categorie] || 0) + r.montant;
+        }
+        detail.depenses.push({ cle: cle, exclu: exclu, categorie: r.categorie, montant: r.montant });
       }
     }
   }
   let budgets = 0;
   for (const b of etat.budgets.filter(b => b.portee === portee)) {
-    const restant = Math.max(0, b.montant - depenseDuMois(b.portee, b.categorie, mois));
-    budgets += Math.max(0, restant - (recParCategorie[b.categorie] || 0));
+    const cle = "b:" + b.portee + ":" + b.categorie;
+    const exclu = exclusions.has(cle);
+    const depense = depenseDuMois(b.portee, b.categorie, mois);
+    const restant = Math.max(0, b.montant - depense);
+    const rec = recParCategorie[b.categorie] || 0;
+    const net = Math.max(0, restant - rec);
+    if (!exclu) budgets += net;
+    if (net > 0) {
+      detail.budgets.push({ cle: cle, exclu: exclu, categorie: b.categorie, plafond: b.montant, depense: depense, rec: rec, montant: net });
+    }
   }
   // Part des budgets déjà consommée (reprend le calcul de l'ancienne carte « Il te reste ») :
   // budgets de cette portée + récurrentes de dépense sans budget, ramenés au dépensé du mois.
@@ -73,6 +94,7 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
     fin: mois + "-" + String(dernierJourDuMois(mois)).padStart(2, "0"),
     solde: solde, revenus: revenus, depenses: depenses, virements: virements, budgets: budgets,
     prevu: solde + revenus - depenses + virements - budgets,
-    aDesComptes: comptesActifs().some(dansLePerimetre)
+    aDesComptes: comptesActifs().some(dansLePerimetre),
+    detail: detail
   };
 }

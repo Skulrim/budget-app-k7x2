@@ -2,8 +2,8 @@
 
 import { moisCourant, nomMois } from "../noyau/dates.js";
 import { etat } from "../noyau/etat.js";
-import { entreesPour, moisAvecMouvements, texteRecherche } from "../noyau/operations.js";
-import { centimesVersEuros, echapper, ligneMontant, normaliser, somme } from "../noyau/outils.js";
+import { budgetSuggere, entreesPour, historiqueCategorie, moisAvecMouvements, texteRecherche } from "../noyau/operations.js";
+import { centimesVersEuros, echapper, eurosRonds, ligneMontant, normaliser, somme } from "../noyau/outils.js";
 import { afficherVue, retourner } from "./navigation.js";
 import { ligneOperation, ligneVirement, supprimerOperation } from "./operations.js";
 import { cliquerEdition } from "./saisie.js";
@@ -27,6 +27,51 @@ export function remplirFiltresMouvements() {
   selCat.value = m.categorie;
 }
 
+// Fiche d'une catégorie de dépense : stats de la période, historique 6 mois, budget suggéré
+function afficherFiche(actif, depenses) {
+  const zone = document.getElementById("fiche-categorie");
+  const m = mouvements;
+  const cat = etat.categories.find(c => c.id === m.categorie);
+  if (!actif || !cat || cat.sens !== "depense") {
+    zone.innerHTML = "";
+    return;
+  }
+  const nb = depenses.length;
+  const moyenne = nb > 0 ? Math.round(somme(depenses) / nb) : 0;
+  const maxi = nb > 0 ? Math.max(...depenses.map(o => o.montant)) : 0;
+  const periode = m.mois === "tous" ? "tous les mois" : nomMois(m.mois);
+
+  const serie = historiqueCategorie(m.portee, m.categorie);
+  const haut = Math.max(...serie.map(p => p.total));
+  const courant = moisCourant();
+  const colonnes = serie.map(p => {
+    const hauteur = p.total > 0 ? Math.max(4, Math.round(p.total / haut * 100)) : 0;
+    const [a, mm] = p.mois.split("-").map(Number);
+    const nom = new Date(a, mm - 1, 1).toLocaleDateString("fr-FR", { month: "short" });
+    return `
+      <div class="histo-col${p.mois === courant ? " courant" : ""}">
+        <small class="histo-val">${p.total > 0 ? eurosRonds(p.total) : "—"}</small>
+        <div class="histo-zone"><div class="histo-barre" style="height:${hauteur}%"></div></div>
+        <small class="histo-mois">${echapper(nom)}</small>
+      </div>`;
+  }).join("");
+
+  const suggere = budgetSuggere(m.portee, m.categorie);
+  const budget = etat.budgets.find(b => b.portee === m.portee && b.categorie === m.categorie);
+  const blocSuggere = suggere !== null
+    ? `<div class="ligne"><span>Budget suggéré</span><strong>${centimesVersEuros(suggere)}</strong></div>
+       <div class="mu">Moyenne de tes derniers mois complets${budget ? " · budget actuel : " + centimesVersEuros(budget.montant) : " · aucun budget pour l'instant"}</div>`
+    : `<div class="mu">Budget suggéré dès qu'un mois complet de dépenses existe.</div>`;
+
+  zone.innerHTML = `
+    <div class="mu">Statistiques · ${echapper(periode)}</div>
+    <div class="ligne"><span>Transactions</span><strong>${nb}</strong></div>
+    ${ligneMontant("Moyenne", moyenne)}
+    ${ligneMontant("Maximum", maxi)}
+    <div class="mu">6 derniers mois</div>
+    ${haut > 0 ? `<div class="histo">${colonnes}</div>` : `<div class="mu">Aucune dépense sur 6 mois.</div>`}
+    ${blocSuggere}`;
+}
 export function afficherMouvements() {
   const m = mouvements;
   const recherche = normaliser(document.getElementById("mouvements-recherche").value);
@@ -54,6 +99,8 @@ export function afficherMouvements() {
       <div class="jauge"><div class="jauge-remplie ${ratio > 1 ? "alerte" : ""}" style="width:${pct}%"></div></div>`;
   }
   document.getElementById("mouvements-total").innerHTML = resume;
+    afficherFiche(Boolean(m.categorie) && m.categorie !== "__virements" && !recherche,
+    ops.filter(o => o.sens === "depense"));
 
   const zone = document.getElementById("liste-mouvements");
   if (entrees.length === 0) {

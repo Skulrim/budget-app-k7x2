@@ -465,3 +465,8 @@ h2 {
 /* ===== Onglet Livrets : bandeau du total ===== */
 #carte-livrets { padding: 0; overflow: hidden; }
 #carte-livrets:empty { display: none; }
+.ligne.total { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bord); }
+.ligne.exclu .txt { opacity: 0.45; text-decoration: line-through; }
+#contenu-prevision .supprimer { margin-left: 8px; padding: 4px 6px; }
+/* ===== Fiche d'une catégorie ===== */
+#fiche-categorie:empty { display: none; }

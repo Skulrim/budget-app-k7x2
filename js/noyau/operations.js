@@ -1,7 +1,7 @@
 // Calculs sur les opérations : dépenses du mois, plafonds, liste fusionnée opérations + virements.
 
 import { porteeDuCompte } from "./comptes.js";
-import { aujourdhui, dernierJourDuMois, moisCourant, moisDecale, moisPrecedent } from "./dates.js";
+import { aujourdhui, dernierJourDuMois, moisCourant, moisDecale, moisEntre, moisPrecedent } from "./dates.js";
 import { etat } from "./etat.js";
 import { normaliser } from "./outils.js";
 
@@ -109,4 +109,22 @@ export function comparaisonMoisPrecedent(portee, dateDuJour = aujourdhui()) {
 // Variation en % (arrondie). null si le mois précédent est à 0 : on ne divise pas par zéro.
 export function variationPourcent(actuel, precedent) {
   return precedent > 0 ? Math.round((actuel - precedent) / precedent * 100) : null;
+}
+// Dépenses d'une catégorie sur les n derniers mois (mois en cours inclus)
+export function historiqueCategorie(portee, categorieId, nb = 6) {
+  return moisEntre(moisDecale(-(nb - 1)), moisCourant())
+    .map(m => ({ mois: m, total: depenseDuMois(portee, categorieId, m) }));
+}
+
+// Budget suggéré : moyenne des 3 derniers mois complets qui ont des dépenses,
+// arrondie aux 5 € supérieurs. null s'il n'y a aucun historique.
+export function budgetSuggere(portee, categorieId) {
+  const totaux = [];
+  for (let n = 1; n <= 3; n++) {
+    const t = depenseDuMois(portee, categorieId, moisDecale(-n));
+    if (t > 0) totaux.push(t);
+  }
+  if (totaux.length === 0) return null;
+  const moyenne = totaux.reduce((a, b) => a + b, 0) / totaux.length;
+  return Math.ceil(moyenne / 500) * 500;
 }
