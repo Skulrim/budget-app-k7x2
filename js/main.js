@@ -23,6 +23,8 @@ import { initConnexion } from "./ui/connexion.js";
 import { exporterSauvegarde, initSauvegarde } from "./ui/sauvegarde.js";
 import { initSelecteurs, remplirChoixBudget, remplirChoixCategories, remplirChoixCategoriesRec, remplirChoixComptes } from "./ui/selecteurs.js";
 import { appliquerTheme, initTheme, themeEnregistre } from "./ui/theme.js";
+import { initNouvelleCategorie } from "./ui/nouvelleCategorie.js";
+import { initCreation } from "./ui/creation.js";
 
 // Les écrans à redessiner à chaque changement, dans l'ordre d'origine
 function rafraichir() {
@@ -70,6 +72,8 @@ initNavigation();
 initAjustements();
 initTheme();
 initSelecteurs();
+initNouvelleCategorie();
+initCreation();
 initComptes();
 initBudgets();
 initCategories();

@@ -58,34 +58,33 @@ export function afficherBudgets() {
           ${textePrevision(b)}
         </div>`;
     }
+    if (zone.innerHTML === "") {
+      zone.innerHTML = `<div class="mu">Aucun budget. Un budget fixe un plafond par mois pour une catégorie.</div>`;
+    }
+    zone.innerHTML += `<button type="button" class="lien-action" data-creer="budget:${portee}">+ Ajouter un budget</button>`;
+    }
   }
+
+// Crée ou met à jour un budget. Renvoie { ok, message } : sert aux Réglages et à la fenêtre « Nouveau budget ».
+export function ajouterBudget(portee, categorieId, texteMontant) {
+  const montant = eurosVersCentimes(texteMontant);
+  if (!categorieId) return { ok: false, message: "Aucune catégorie : ajoutes-en une d'abord" };
+  if (isNaN(montant) || montant <= 0) return { ok: false, message: "Montant invalide" };
+  const existant = etat.budgets.find(b => b.portee === portee && b.categorie === categorieId);
+  if (existant) existant.montant = montant;
+  else etat.budgets.push({ portee: portee, categorie: categorieId, montant: montant });
+  sauvegarder();
+  rafraichir();
+  return { ok: true, message: existant ? "Budget mis à jour" : "Budget ajouté" };
 }
 
 function enregistrerBudget() {
-  const portee = document.getElementById("budget-portee").value;
-  const categorieId = document.getElementById("budget-categorie").value;
-  const montant = eurosVersCentimes(document.getElementById("budget-montant").value);
-  const message = document.getElementById("message-budget");
-  if (!categorieId) {
-    message.textContent = "Aucune catégorie : ajoutes-en une d'abord";
-    return;
-  }
-  if (isNaN(montant) || montant <= 0) {
-    message.textContent = "Montant invalide";
-    return;
-  }
-  const existant = etat.budgets.find(b =>
-    b.portee === portee && b.categorie === categorieId);
-  if (existant) {
-    existant.montant = montant;
-    message.textContent = "Budget mis à jour";
-  } else {
-    etat.budgets.push({ portee: portee, categorie: categorieId, montant: montant });
-    message.textContent = "Budget ajouté";
-  }
-  document.getElementById("budget-montant").value = "";
-  sauvegarder();
-  rafraichir();
+  const r = ajouterBudget(
+    document.getElementById("budget-portee").value,
+    document.getElementById("budget-categorie").value,
+    document.getElementById("budget-montant").value);
+  document.getElementById("message-budget").textContent = r.message;
+  if (r.ok) document.getElementById("budget-montant").value = "";
 }
 
 function retirerBudget(e) {

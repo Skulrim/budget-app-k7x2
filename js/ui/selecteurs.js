@@ -4,6 +4,7 @@ import { categoriesPour } from "../noyau/categories.js";
 import { comptesActifs, estPlacement } from "../noyau/comptes.js";
 import { etat } from "../noyau/etat.js";
 import { echapper } from "../noyau/outils.js";
+const OPTION_NOUVELLE = `<option value="">➕ Créer une catégorie…</option>`;
 
 export function remplirChoixComptes() {
   for (const idMenu of ["choix-compte", "virement-depuis", "virement-vers"]) {
@@ -49,6 +50,10 @@ export function remplirChoixCategories() {
   for (const cat of categoriesPour(compteId, sens)) {
     choix.innerHTML += `<option value="${cat.id}">${echapper(cat.nom)}</option>`;
   }
+  for (const cat of categoriesPour(compteId, sens)) {
+    choix.innerHTML += `<option value="${cat.id}">${echapper(cat.nom)}</option>`;
+  }
+  choix.innerHTML += OPTION_NOUVELLE;
 }
 
 export function remplirChoixBudget() {
@@ -60,6 +65,10 @@ export function remplirChoixBudget() {
   for (const c of liste) {
     choix.innerHTML += `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`;
   }
+  for (const c of liste) {
+    choix.innerHTML += `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`;
+  }
+  choix.innerHTML += OPTION_NOUVELLE;
 }
 
 function remplirChoixPlan() {
@@ -93,7 +102,7 @@ export function remplirChoixCategoriesRec() {
   const memoire = choix.value;
   choix.innerHTML = compteId
     ? categoriesPour(compteId, sens)
-        .map(c => `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`).join("")
+        .map(c => `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`).join("") + OPTION_NOUVELLE
     : "";
   if (memoire) choix.value = memoire;
 }

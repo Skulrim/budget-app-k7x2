@@ -470,3 +470,10 @@ h2 {
 #contenu-prevision .supprimer { margin-left: 8px; padding: 4px 6px; }
 /* ===== Fiche d'une catégorie ===== */
 #fiche-categorie:empty { display: none; }
+/* ===== Création rapide de catégorie : au-dessus du panneau de saisie ===== */
+#panneau-categorie { z-index: 12; }
+.lien-action[data-reglage], .lien-action[data-creer] { margin-top: 12px; }
+/* Fenêtre ouverte : la page derrière ne défile plus */
+html:has(.panneau:not([hidden])), body:has(.panneau:not([hidden])) { overflow: hidden; }
+.panneau { touch-action: none; overscroll-behavior: none; }
+.panneau-contenu { touch-action: pan-y; overscroll-behavior: contain; }

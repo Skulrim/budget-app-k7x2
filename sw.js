@@ -1,4 +1,4 @@
-const VERSION = "budget-v11";
+const VERSION = "budget-v13";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
@@ -31,11 +31,13 @@ const FICHIERS = [
   "./js/ui/categories.js",
   "./js/ui/comptes.js",
   "./js/ui/connexion.js",
+  "./js/ui/creation.js",
   "./js/ui/epargne.js",
   "./js/ui/graphiques.js",
   "./js/ui/mouvements.js",
   "./js/ui/navigation.js",
   "./js/ui/notifications.js",
+  "./js/ui/nouvelleCategorie.js",
   "./js/ui/operations.js",
   "./js/ui/placements.js",
   "./js/ui/prevision.js",

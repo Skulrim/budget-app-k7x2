@@ -90,9 +90,10 @@ export function afficherObjectifs() {
       </div>`;
     choix.innerHTML += `<option value="${o.id}">${echapper(o.nom)}</option>`;
   }
-    if (etat.objectifs.length === 0) {
-    zone.innerHTML = `<div class="mu">Aucun objectif. Crée-en un dans ⚙ Réglages, « Épargne : plans et objectifs ».</div>`;
+  if (etat.objectifs.length === 0) {
+    zone.innerHTML = `<div class="mu">Aucun objectif d'achat (voyage, écran…).</div>`;
   }
+  zone.innerHTML += `<button type="button" class="lien-action" data-creer="objectif">+ Nouvel objectif</button>`;
   if (memoire) choix.value = memoire;
 
   const controle = document.getElementById("controle-objectifs");
@@ -125,39 +126,36 @@ export function afficherMises() {
   }
 }
 
-function enregistrerPlan() {
-  const compteId = document.getElementById("plan-compte").value;
-  const montant = eurosVersCentimes(document.getElementById("plan-montant").value);
-  const message = document.getElementById("message-plan");
-  if (!compteId) {
-    message.textContent = "Crée d'abord un livret, un PEA ou une assurance vie";
-    return;
-  }
-  if (isNaN(montant) || montant <= 0) {
-    message.textContent = "Montant invalide";
-    return;
-  }
+export function ajouterPlan(compteId, texteMontant) {
+  const montant = eurosVersCentimes(texteMontant);
+  if (!compteId) return { ok: false, message: "Crée d'abord un livret, un PEA ou une assurance vie" };
+  if (isNaN(montant) || montant <= 0) return { ok: false, message: "Montant invalide" };
   const existant = etat.plansEpargne.find(p => p.compteId === compteId);
-  if (existant) {
-    existant.montant = montant;
-    message.textContent = "Plan mis à jour";
-  } else {
-    etat.plansEpargne.push({ ...nouvelEnregistrement("e"), compteId: compteId, montant: montant });
-    message.textContent = "Plan ajouté";
-  }
-  document.getElementById("plan-montant").value = "";
+  if (existant) existant.montant = montant;
+  else etat.plansEpargne.push({ ...nouvelEnregistrement("e"), compteId: compteId, montant: montant });
   sauvegarder();
   rafraichir();
+  return { ok: true, message: existant ? "Plan mis à jour" : "Plan ajouté" };
+}
+
+function enregistrerPlan() {
+  const r = ajouterPlan(
+    document.getElementById("plan-compte").value,
+    document.getElementById("plan-montant").value);
+  document.getElementById("message-plan").textContent = r.message;
+  if (r.ok) document.getElementById("plan-montant").value = "";
 }
 
 function dessinerPlans(idZone, filtre) {
+  const genre = idZone === "liste-plans-livrets" ? "livret" : "placement";
   const zone = document.getElementById(idZone);
   const plans = etat.plansEpargne.filter(p => {
     const c = etat.comptes.find(x => x.id === p.compteId);
     return c && !c.archive && filtre(c);
   });
   if (plans.length === 0) {
-    zone.innerHTML = `<div class="mu">Aucun plan. Tu peux en créer un dans ⚙ Réglages, « Plans d'épargne ».</div>`;
+    zone.innerHTML = `<div class="mu">Aucun plan d'épargne.</div>
+      <button type="button" class="lien-action" data-creer="plan:${genre}">+ Ajouter un plan</button>`;
     return;
   }
   zone.innerHTML = plans.map(p => {
@@ -177,7 +175,7 @@ function dessinerPlans(idZone, filtre) {
           ? `<div class="succes">✓ Fait ce mois-ci</div>`
           : `<small class="mu">Il reste ${centimesVersEuros(p.montant - fait)} à verser</small>`}
       </div>`;
-  }).join("");
+  }).join("") + `<button type="button" class="lien-action" data-creer="plan:${genre}">+ Ajouter un plan</button>`;
 }
 
 export function afficherPlans() {
@@ -193,28 +191,29 @@ function retirerPlan(e) {
   });
 }
 
-function creerObjectif() {
-  const nom = document.getElementById("objectif-nom").value.trim();
-  const cible = eurosVersCentimes(document.getElementById("objectif-cible").value);
-  const message = document.getElementById("message-objectif");
-  if (nom === "") {
-    message.textContent = "Donne un nom à l'objectif";
-    return;
-  }
-  if (isNaN(cible) || cible <= 0) {
-    message.textContent = "Montant invalide";
-    return;
-  }
+export function ajouterObjectif(nomBrut, texteCible) {
+  const nom = nomBrut.trim();
+  const cible = eurosVersCentimes(texteCible);
+  if (nom === "") return { ok: false, message: "Donne un nom à l'objectif" };
+  if (isNaN(cible) || cible <= 0) return { ok: false, message: "Montant invalide" };
   if (etat.objectifs.some(o => normaliser(o.nom) === normaliser(nom))) {
-    message.textContent = "Cet objectif existe déjà";
-    return;
+    return { ok: false, message: "Cet objectif existe déjà" };
   }
-  message.textContent = "";
   etat.objectifs.push({ ...nouvelEnregistrement("g"), nom: nom, cible: cible });
-  document.getElementById("objectif-nom").value = "";
-  document.getElementById("objectif-cible").value = "";
   sauvegarder();
   rafraichir();
+  return { ok: true, message: "Objectif créé" };
+}
+
+function creerObjectif() {
+  const r = ajouterObjectif(
+    document.getElementById("objectif-nom").value,
+    document.getElementById("objectif-cible").value);
+  document.getElementById("message-objectif").textContent = r.message;
+  if (r.ok) {
+    document.getElementById("objectif-nom").value = "";
+    document.getElementById("objectif-cible").value = "";
+  }
 }
 
 function mettreDeCote(sens) {

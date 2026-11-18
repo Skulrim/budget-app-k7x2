@@ -125,6 +125,10 @@ function ajouterOperation() {
     message.textContent = "Crée d'abord un compte (⚙ Réglages)";
     return;
   }
+  if (!document.getElementById("choix-categorie").value) {
+    message.textContent = "Choisis une catégorie";
+    return;
+  }
   message.textContent = "";
   const champs = {
     compteId: compteId,

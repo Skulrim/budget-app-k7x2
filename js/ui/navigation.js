@@ -42,6 +42,15 @@ export function afficherVue(nom) {
   window.scrollTo(0, 0);
 }
 
+// Ouvre les Réglages directement sur un bloc déplié (ex. « bloc-budgets »)
+export function ouvrirReglages(idBloc) {
+  afficherVue("reglages");
+  const bloc = document.getElementById(idBloc);
+  if (!bloc) return;
+  bloc.open = true;
+  bloc.scrollIntoView({ block: "start" });
+}
+
 export function retourner() {
   afficherVue(vuePrecedente);
 }
@@ -53,4 +62,8 @@ export function initNavigation() {
   }
   document.getElementById("bouton-reglages").addEventListener("click", () => afficherVue("reglages"));
   document.getElementById("fermer-reglages").addEventListener("click", () => afficherVue(vuePrecedente));
+  document.addEventListener("click", (e) => {
+    const bouton = e.target.closest("[data-reglage]");
+    if (bouton) ouvrirReglages(bouton.dataset.reglage);
+  });
 }

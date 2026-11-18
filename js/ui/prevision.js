@@ -95,7 +95,8 @@ function dessinerPrevision(portee, idZone, vide) {
   const zone = document.getElementById(idZone);
   const p = calculerPrevision(portee);
   if (!p.aDesComptes) {
-    zone.innerHTML = `<div class="mu prev-corps">${vide}</div>`;
+    zone.innerHTML = `<div class="prev-corps"><div class="mu">${vide}</div>
+      <button type="button" class="lien-action" data-reglage="bloc-comptes">Créer un compte</button></div>`;
     return;
   }
   const date = new Date(p.fin + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });

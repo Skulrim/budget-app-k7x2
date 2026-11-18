@@ -143,7 +143,7 @@
 <section id="vue-reglages" class="vue" hidden>
   <button id="fermer-reglages" type="button" class="lien retour">← Retour</button>
 
-  <details class="repliable">
+  <details class="repliable" id="bloc-comptes">
     <summary>Comptes</summary>
     <h3>Nouveau compte</h3>
     <div class="saisie">
@@ -183,7 +183,7 @@
     <section id="liste-ajustements"></section>
   </details>
 
-  <details class="repliable">
+  <details class="repliable" id="bloc-budgets">
     <summary>Budgets et catégories</summary>
     <h3>Ajouter ou modifier un budget</h3>
     <div class="saisie">
@@ -219,7 +219,7 @@
       <p id="message-categorie-liste" class="mu"></p>
     </details>
   </details>
-<details class="repliable">
+<details class="repliable" id="bloc-epargne">
   <summary>Épargne : plans et objectifs</summary>
   <h3>Plan d'épargne mensuel</h3>
   <div class="saisie">
@@ -363,6 +363,42 @@
   </div>
 </div>
 
+<div id="panneau-categorie" class="panneau" hidden>
+  <div class="panneau-contenu">
+    <h2>Nouvelle catégorie</h2>
+    <p id="info-nouvelle-categorie" class="mu"></p>
+    <div class="saisie">
+      <input id="nc-nom" type="text" maxlength="40" placeholder="Nom (ex : Netflix)">
+      <input id="nc-icone" type="text" maxlength="12" placeholder="Icône (un emoji, facultatif)">
+      <input id="nc-budget" type="text" inputmode="decimal" placeholder="Budget par mois (facultatif, ex : 15)">
+      <button id="nc-creer" type="button">Créer la catégorie</button>
+      <p id="nc-message"></p>
+    </div>
+    <button id="nc-annuler" type="button" class="lien">Annuler</button>
+  </div>
+</div>
+<div id="panneau-creation" class="panneau" hidden>
+  <div class="panneau-contenu">
+    <h2 id="creation-titre"></h2>
+    <div id="creation-budget" class="saisie" hidden>
+      <select id="creation-budget-categorie"></select>
+      <input id="creation-budget-montant" type="text" inputmode="decimal" placeholder="Montant par mois (ex : 250)">
+    </div>
+    <div id="creation-plan" class="saisie" hidden>
+      <select id="creation-plan-compte"></select>
+      <input id="creation-plan-montant" type="text" inputmode="decimal" placeholder="Montant à verser par mois (ex : 200)">
+    </div>
+    <div id="creation-objectif" class="saisie" hidden>
+      <input id="creation-objectif-nom" type="text" maxlength="40" placeholder="Nom (ex : Voyage, Nouvel écran)">
+      <input id="creation-objectif-cible" type="text" inputmode="decimal" placeholder="Montant à atteindre (ex : 800)">
+    </div>
+    <div class="saisie">
+      <button id="creation-valider" type="button">Créer</button>
+      <p id="creation-message"></p>
+    </div>
+    <button id="creation-annuler" type="button" class="lien">Annuler</button>
+  </div>
+</div>
   <div id="panneau-bilan" class="panneau" hidden>
   <div class="panneau-contenu">
     <select id="choix-mois-bilan"></select>
