@@ -1,4 +1,4 @@
-const VERSION = "budget-v13";
+const VERSION = "budget-v14";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
@@ -25,6 +25,7 @@ const FICHIERS = [
   "./js/synchro/cloud.js",
   "./js/synchro/config.js",
   "./js/ui/ajustements.js",
+  "./js/ui/aide.js",
   "./js/ui/badges.js",
   "./js/ui/bilan.js",
   "./js/ui/budgets.js",

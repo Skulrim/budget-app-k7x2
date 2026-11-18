@@ -50,9 +50,6 @@ export function remplirChoixCategories() {
   for (const cat of categoriesPour(compteId, sens)) {
     choix.innerHTML += `<option value="${cat.id}">${echapper(cat.nom)}</option>`;
   }
-  for (const cat of categoriesPour(compteId, sens)) {
-    choix.innerHTML += `<option value="${cat.id}">${echapper(cat.nom)}</option>`;
-  }
   choix.innerHTML += OPTION_NOUVELLE;
 }
 
@@ -65,12 +62,8 @@ export function remplirChoixBudget() {
   for (const c of liste) {
     choix.innerHTML += `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`;
   }
-  for (const c of liste) {
-    choix.innerHTML += `<option value="${echapper(c.id)}">${echapper(c.nom)}</option>`;
-  }
   choix.innerHTML += OPTION_NOUVELLE;
 }
-
 function remplirChoixPlan() {
   const choix = document.getElementById("plan-compte");
   choix.innerHTML = "";

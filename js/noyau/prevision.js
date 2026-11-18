@@ -4,6 +4,7 @@ import { comptesActifs, porteeDuCompte, totalPar } from "./comptes.js";
 import { aujourdhui, dernierJourDuMois } from "./dates.js";
 import { etat } from "./etat.js";
 import { depenseDuMois } from "./operations.js";
+import { echeanceCeMois } from "./recurrences.js";
 
 function compteActif(id) {
   const c = etat.comptes.find(x => x.id === id);
@@ -16,6 +17,7 @@ function compteActif(id) {
 //   − ce qu'il reste à dépenser dans chaque budget de cette portée (plafond − déjà dépensé),
 //     sans recompter les dépenses récurrentes de la même catégorie, déjà prises plus haut.
 // Hypothèse prudente : on dépense jusqu'au plafond. Les catégories sans budget ne sont pas estimées.
+// Un récurrent n'est compté que s'il tombe ce mois-ci (selon sa fréquence : mensuel, trimestriel…).
 // Les lignes exclues pour ce mois (etat.exclusions) ne sont pas comptées, mais restent dans `detail`
 // (avec exclu: true) pour pouvoir les réintégrer depuis la fenêtre du calcul.
 export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
@@ -28,7 +30,7 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
   const recParCategorie = {};
   const detail = { revenus: [], depenses: [], virements: [], budgets: [] };
   for (const r of etat.recurrentes) {
-    if (r.debut > mois || r.traites.includes(mois)) continue;
+    if (!echeanceCeMois(r, mois) || r.traites.includes(mois)) continue;
     const cle = "r:" + r.id;
     const exclu = exclusions.has(cle);
     if (r.type === "virement") {
@@ -79,7 +81,7 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
   }
   const comptees = new Set();
   for (const r of etat.recurrentes) {
-    if (r.sens !== "depense" || r.debut > mois) continue;
+    if (r.sens !== "depense" || !echeanceCeMois(r, mois)) continue;
     const compte = compteActif(r.compteId);
     if (!compte || porteeDuCompte(r.compteId) !== portee) continue;
     if (budgetees.has(r.categorie)) continue;

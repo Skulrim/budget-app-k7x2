@@ -1,8 +1,9 @@
 // Panneau « + » : saisie et modification d'opérations et de virements.
 
-import { aujourdhui, dateValide } from "../noyau/dates.js";
+import { aujourdhui, ajouterMois, dateValide } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { eurosVersCentimes, nouvelEnregistrement } from "../noyau/outils.js";
+import { FREQUENCES } from "../noyau/recurrences.js";
 import { rafraichir } from "../rendu.js";
 import { montrerNotif } from "./notifications.js";
 import { remplirChoixCategories } from "./selecteurs.js";
@@ -97,6 +98,7 @@ export function preparerSaisie() {
   document.getElementById("annuler-edition").hidden = true;
   document.getElementById("titre-edition").hidden = true;
   document.querySelector(".bascule").hidden = false;
+  document.getElementById("repeter").value = "0";
 }
 
 function marquerRecurrenceTraitee() {
@@ -138,11 +140,24 @@ function ajouterOperation() {
     categorie: document.getElementById("choix-categorie").value,
     note: document.getElementById("note-operation").value.trim().slice(0, 80)
   };
+  const frequence = Number(document.getElementById("repeter").value);
   if (edition.operation) {
     const op = etat.operations.find(o => o.id === edition.operation);
     if (op) Object.assign(op, champs);
   } else {
     etat.operations.push({ ...nouvelEnregistrement("o"), ...champs });
+    if (frequence > 0) {
+      // L'opération du jour est déjà saisie : le récurrent démarre à la prochaine échéance
+      const jour = Number(date.slice(8, 10));
+      etat.recurrentes.push({
+        ...nouvelEnregistrement("r"),
+        compteId: champs.compteId, sens: champs.sens, categorie: champs.categorie,
+        montant: champs.montant, jour: jour, note: champs.note,
+        frequence: frequence, debut: ajouterMois(date.slice(0, 7), frequence),
+        pourMoisSuivant: false, traites: []
+      });
+      montrerNotif("Récurrent créé : " + FREQUENCES[frequence] + ", le " + jour);
+    }
   }
   marquerRecurrenceTraitee();
   edition.operation = null;
@@ -192,6 +207,8 @@ export function afficherFormulaire(nom) {
   document.getElementById("formulaire-virement").hidden = (nom !== "virement");
   document.getElementById("onglet-operation").classList.toggle("actif", nom === "operation");
   document.getElementById("onglet-virement").classList.toggle("actif", nom === "virement");
+  // « Répéter » : seulement pour une nouvelle opération (pas en modification, ni en validation d'un récurrent)
+  document.getElementById("ligne-repeter").hidden = Boolean(edition.operation || edition.recurrence);
 }
 
 // Branche les écouteurs d'événements de ce module (appelé une fois par main.js)

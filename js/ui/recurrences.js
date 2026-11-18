@@ -1,10 +1,10 @@
 // Récurrences : carte « À valider », formulaire, liste.
 
 import { iconeCategorie, nomCategorie } from "../noyau/categories.js";
-import { dateEcheance, moisCourant, moisDecale } from "../noyau/dates.js";
+import { dateEcheance, moisDecale } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { centimesVersEuros, echapper, eurosVersCentimes, nouvelEnregistrement } from "../noyau/outils.js";
-import { aValider } from "../noyau/recurrences.js";
+import { FREQUENCES, aValider } from "../noyau/recurrences.js";
 import { rafraichir } from "../rendu.js";
 import { supprimerAvecAnnulation } from "./notifications.js";
 import { afficherFormulaire, edition, preparerSaisie } from "./saisie.js";
@@ -136,8 +136,9 @@ function enregistrerRecurrence() {
   }
   etat.recurrentes.push({
     ...nouvelEnregistrement("r"), ...base, montant: montant, jour: jour,
+    frequence: Number(document.getElementById("rec-frequence").value),
     note: document.getElementById("rec-note").value.trim().slice(0, 80),
-    debut: document.getElementById("rec-debut").value === "suivant" ? moisDecale(1) : moisCourant(),
+    debut: moisDecale(Number(document.getElementById("rec-debut").value)),
     traites: []
   });
   message.textContent = "Ajouté";
@@ -156,13 +157,14 @@ export function afficherRecurrentes() {
   }
   zone.innerHTML = etat.recurrentes.map(r => {
     const note = r.note ? `<small>${echapper(r.note)}</small>` : "";
+    const rythme = "Le " + r.jour + ", " + (FREQUENCES[r.frequence || 1] || "chaque mois");
     if (r.type === "virement") {
       const de = etat.comptes.find(c => c.id === r.depuisId);
       const vers = etat.comptes.find(c => c.id === r.versId);
       return `
         <div class="op">
           <i class="pastille">↔️</i>
-          <div>Virement<small>Le ${r.jour} de chaque mois · ${de ? echapper(de.nom) : "?"} → ${vers ? echapper(vers.nom) : "?"}</small>${note}</div>
+          <div>Virement<small>${rythme} · ${de ? echapper(de.nom) : "?"} → ${vers ? echapper(vers.nom) : "?"}</small>${note}</div>
           <span>${centimesVersEuros(r.montant)}</span>
           <button class="supprimer" data-rec-supp="${r.id}" aria-label="Supprimer">✕</button>
         </div>`;
@@ -172,7 +174,7 @@ export function afficherRecurrentes() {
     return `
       <div class="op">
         <i class="pastille">${iconeCategorie(r.categorie)}</i>
-        <div>${nomCategorie(r.categorie)}<small>Le ${r.jour} de chaque mois · ${compte ? echapper(compte.nom) : "?"}</small>${note}</div>
+        <div>${nomCategorie(r.categorie)}<small>${rythme} · ${compte ? echapper(compte.nom) : "?"}</small>${note}</div>
         <span>${signe} ${centimesVersEuros(r.montant)}</span>
         <button class="supprimer" data-rec-supp="${r.id}" aria-label="Supprimer">✕</button>
       </div>`;

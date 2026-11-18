@@ -4,6 +4,7 @@ import { comptesActifs, porteeDuCompte } from "./comptes.js";
 import { aujourdhui, dernierJourDuMois } from "./dates.js";
 import { etat } from "./etat.js";
 import { depenseDuMois } from "./operations.js";
+import { echeanceCeMois } from "./recurrences.js";
 
 // Avant ce jour du mois, une extrapolation au rythme actuel serait trop instable
 // (un seul gros achat le 2 fausserait tout).
@@ -18,7 +19,7 @@ function recurrentesDuBudget(b) {
 }
 
 // Renvoie { prevision, mode } ; prevision vaut null si c'est trop tôt dans le mois.
-//  - mode "recurrent" : catégorie avec une opération récurrente (loyer, abonnement…).
+//  - mode "recurrent" : catégorie avec une opération récurrente due ce mois-ci (loyer, abonnement…).
 //    On n'extrapole pas (un loyer payé le 1er ne se répète pas) :
 //    prévision = déjà dépensé + récurrentes de ce mois pas encore validées.
 //  - mode "rythme" : sinon, dépensé à ce jour / jours écoulés x jours du mois.
@@ -26,7 +27,7 @@ export function previsionBudget(b, jour = aujourdhui()) {
   const mois = jour.slice(0, 7);
   const ecoules = Number(jour.slice(8, 10));
   const depense = depenseDuMois(b.portee, b.categorie, mois);
-  const recurrentes = recurrentesDuBudget(b).filter(r => r.debut <= mois);
+  const recurrentes = recurrentesDuBudget(b).filter(r => echeanceCeMois(r, mois));
   if (recurrentes.length > 0) {
     const aVenir = recurrentes
       .filter(r => !r.traites.includes(mois))

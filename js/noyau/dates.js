@@ -79,3 +79,16 @@ export function moisCourt(mois) {
   const [a, m] = mois.split("-").map(Number);
   return new Date(a, m - 1, 1).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
 }
+
+// Mois (« 2026-11 ») décalé de n mois, n pouvant dépasser 12
+export function ajouterMois(mois, n) {
+  const [a, m] = mois.split("-").map(Number);
+  return new Date(a, m - 1 + n, 1).toLocaleDateString("sv-SE").slice(0, 7);
+}
+
+// Nombre de mois entre deux mois (positif si `mois` est après `debut`)
+export function ecartMois(debut, mois) {
+  const [a1, m1] = debut.split("-").map(Number);
+  const [a2, m2] = mois.split("-").map(Number);
+  return (a2 - a1) * 12 + (m2 - m1);
+}

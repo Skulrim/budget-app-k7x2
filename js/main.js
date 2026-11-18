@@ -25,6 +25,7 @@ import { initSelecteurs, remplirChoixBudget, remplirChoixCategories, remplirChoi
 import { appliquerTheme, initTheme, themeEnregistre } from "./ui/theme.js";
 import { initNouvelleCategorie } from "./ui/nouvelleCategorie.js";
 import { initCreation } from "./ui/creation.js";
+import { initAide, ouvrirAideSiNouveau } from "./ui/aide.js";
 
 // Les écrans à redessiner à chaque changement, dans l'ordre d'origine
 function rafraichir() {
@@ -90,6 +91,7 @@ initMouvements();
 initRecurrences();
 initGraphiques();
 initPrevision();
+initAide();
 
 // Démarrage (même ordre qu'avant le découpage)
 appliquerTheme(themeEnregistre());
@@ -100,6 +102,7 @@ majChampVerse();
 remplirChoixBudget();
 rafraichir();
 afficherVue("accueil");
+ouvrirAideSiNouveau();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register(new URL("../sw.js", import.meta.url));
 }
