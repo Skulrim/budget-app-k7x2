@@ -153,50 +153,50 @@ export function majChampVerse() {
   document.getElementById("compte-verse").hidden = !TYPES_PLACEMENT.includes(type);
 }
 
-function creerCompte() {
-  const nom = document.getElementById("compte-nom").value.trim();
-  const type = document.getElementById("compte-type").value;
-  const texteSolde = document.getElementById("compte-solde").value.trim();
-  const solde = texteSolde === "" ? 0 : eurosVersCentimes(texteSolde);
-  const message = document.getElementById("message-compte");
-  if (nom === "") {
-    message.textContent = "Donne un nom au compte";
-    return;
-  }
-  if (isNaN(solde)) {
-    message.textContent = "Solde invalide";
-    return;
-  }
+// Crée un compte. Renvoie { ok, message } : sert aux Réglages et à l'aide de démarrage.
+export function ajouterCompte(nomBrut, type, proprietaire, texteSolde, texteVerse) {
+  const nom = nomBrut.trim();
+  const texte = texteSolde.trim();
+  const solde = texte === "" ? 0 : eurosVersCentimes(texte);
+  if (nom === "") return { ok: false, message: "Donne un nom au compte" };
+  if (isNaN(solde)) return { ok: false, message: "Solde invalide" };
   if (etat.comptes.some(c => c.nom.toLowerCase() === nom.toLowerCase())) {
-    message.textContent = "Ce nom existe déjà";
-    return;
+    return { ok: false, message: "Ce nom existe déjà" };
   }
   let verse = 0;
   if (TYPES_PLACEMENT.includes(type)) {
-    verse = eurosVersCentimes(document.getElementById("compte-verse").value);
-    if (isNaN(verse) || verse < 0) {
-      message.textContent = "Indique le total déjà versé";
-      return;
-    }
+    verse = eurosVersCentimes(texteVerse);
+    if (isNaN(verse) || verse < 0) return { ok: false, message: "Indique le total déjà versé" };
   }
-  message.textContent = "";
   etat.comptes.push({
     ...nouvelEnregistrement("c"),
     nom: nom,
     type: type,
-    proprietaire: document.getElementById("compte-proprio").value,
+    proprietaire: proprietaire,
     soldeDepart: solde,
     verseDepart: verse
   });
-  document.getElementById("compte-nom").value = "";
-  document.getElementById("compte-solde").value = "";
-  document.getElementById("compte-verse").value = "";
   sauvegarder();
   remplirChoixComptes();
   remplirChoixCategories();
   rafraichir();
+  return { ok: true, message: "Compte créé" };
 }
 
+function creerCompte() {
+  const r = ajouterCompte(
+    document.getElementById("compte-nom").value,
+    document.getElementById("compte-type").value,
+    document.getElementById("compte-proprio").value,
+    document.getElementById("compte-solde").value,
+    document.getElementById("compte-verse").value);
+  document.getElementById("message-compte").textContent = r.message;
+  if (r.ok) {
+    document.getElementById("compte-nom").value = "";
+    document.getElementById("compte-solde").value = "";
+    document.getElementById("compte-verse").value = "";
+  }
+}
 // Branche les écouteurs d'événements de ce module (appelé une fois par main.js)
 export function initComptes() {
   document.getElementById("gestion-comptes").addEventListener("click", changerArchivage);
