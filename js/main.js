@@ -26,6 +26,7 @@ import { appliquerTheme, initTheme, themeEnregistre } from "./ui/theme.js";
 import { initNouvelleCategorie } from "./ui/nouvelleCategorie.js";
 import { initCreation } from "./ui/creation.js";
 import { initAide, ouvrirAideSiNouveau } from "./ui/aide.js";
+import { afficherBadgeAccueil, initAccueil } from "./ui/accueil.js";
 
 // Les écrans à redessiner à chaque changement, dans l'ordre d'origine
 function rafraichir() {
@@ -58,6 +59,7 @@ function rafraichir() {
   afficherAnneaux();
   afficherCourbeEpargne();
   afficherHistogrammeMois();
+  afficherBadgeAccueil();
 }
 
 function rafraichirTout() {
@@ -92,6 +94,7 @@ initRecurrences();
 initGraphiques();
 initPrevision();
 initAide();
+initAccueil();
 
 // Démarrage (même ordre qu'avant le découpage)
 appliquerTheme(themeEnregistre());

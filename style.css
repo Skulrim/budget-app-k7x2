@@ -494,3 +494,16 @@ html:has(.panneau:not([hidden])), body:has(.panneau:not([hidden])) { overflow: h
 .saisie input[type="checkbox"] { min-height: 0; width: 22px; height: 22px; padding: 0; accent-color: var(--accent); }
 /* ===== Aide de démarrage : bouton rangé dans « Au quotidien » ===== */
 #bouton-aide { order: 4; }
+/* ===== Accueil à onglets ===== */
+.pastilles { display: flex; gap: 8px; margin-top: 12px; }
+.pastilles button {
+  flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid var(--bord);
+  background: var(--carte); color: var(--discret); font-size: 15px;
+  font-family: inherit; font-weight: 600; cursor: pointer;
+}
+.pastilles button.actif { background: var(--accent); border-color: var(--accent); color: var(--texte-sur-accent); }
+.pastilles b {
+  display: inline-block; min-width: 20px; height: 20px; line-height: 20px;
+  margin-left: 6px; padding: 0 6px; border-radius: 10px; font-size: 12px;
+  background: var(--alerte); color: var(--texte-sur-accent);
+}

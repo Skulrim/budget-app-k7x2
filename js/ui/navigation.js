@@ -1,6 +1,6 @@
 // Changement de vue (onglets, réglages) et animation des jauges.
 
-function animerJauges() {
+export function animerJauges() {
   const barres = document.querySelectorAll(".vue:not([hidden]) .jauge-remplie[data-pct]");
   const cercles = document.querySelectorAll(".vue:not([hidden]) circle[data-trait]");
   for (const b of barres) {

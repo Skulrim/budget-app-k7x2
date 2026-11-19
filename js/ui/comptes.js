@@ -22,12 +22,15 @@ function detailPlacement(compte) {
 
 function dessinerComptes(idZone, filtre) {
   const zone = document.getElementById(idZone);
+  // Dans l'onglet Placements, toucher une carte ouvre la mise à jour de sa valeur
+  const touche = idZone === "liste-placements";
   zone.innerHTML = comptesActifs().filter(filtre).map(compte => `
-    <div class="carte">
+    <div class="carte${touche ? " cliquable" : ""}"${touche ? ` data-creer="valo:${compte.id}"` : ""}>
       <i class="pastille t-${echapper(compte.type)}">${iconeType(compte.type)}</i>
       <div>
         <span>${echapper(compte.nom)}</span>
         ${estPlacement(compte) ? detailPlacement(compte) : ""}
+        ${touche ? `<small class="detail">Touche pour mettre à jour la valeur</small>` : ""}
       </div>
       <strong>${centimesVersEuros(calculerSolde(compte.id))}</strong>
     </div>`).join("");

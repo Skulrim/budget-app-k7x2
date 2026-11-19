@@ -30,26 +30,39 @@
 
   <main>
     <section id="vue-accueil" class="vue">
-      <section id="carte-rappels"></section>
-      <section id="carte-a-valider"></section>
-      <section id="carte-patrimoine" class="patrimoine"></section>
-      <h2>📈 Évolution de l'épargne</h2>
-<section id="graphique-epargne" class="patrimoine"></section>
-      <h2>🏠 Prévision de fin de mois · Compte commun</h2>
-      <section id="carte-prevision-commun" class="patrimoine"></section>
-      <h2>👤 Prévision de fin de mois · Mes comptes perso</h2>
-      <section id="carte-prevision-perso" class="patrimoine"></section>
-      <h2>📊 Dépenses sur 6 mois</h2>
-      <section id="graphique-mois" class="patrimoine"></section>
-      
-      <section id="carte-bilan" class="patrimoine"></section>
-      <h2>💳 Mes comptes</h2>
-      <section id="liste-comptes"></section>
-      <details class="repliable details-badges">
-        <summary>🏅 Séries et badges</summary>
-        <section id="carte-series" class="patrimoine"></section>
-<section id="liste-badges" class="badges"></section>
-      </details>
+      <div id="onglets-accueil" class="pastilles">
+        <button type="button" data-onglet="aujourdhui" class="actif">Aujourd'hui<b id="badge-aujourdhui" hidden></b></button>
+        <button type="button" data-onglet="evolution">Évolution</button>
+        <button type="button" data-onglet="comptes">Comptes</button>
+      </div>
+
+      <div id="onglet-aujourdhui" class="onglet-accueil">
+        <section id="carte-rappels"></section>
+        <section id="carte-a-valider"></section>
+        <section id="carte-patrimoine" class="patrimoine"></section>
+        <h2>🏠 Prévision de fin de mois · Compte commun</h2>
+        <section id="carte-prevision-commun" class="patrimoine"></section>
+        <h2>👤 Prévision de fin de mois · Mes comptes perso</h2>
+        <section id="carte-prevision-perso" class="patrimoine"></section>
+      </div>
+
+      <div id="onglet-evolution" class="onglet-accueil" hidden>
+        <h2>📈 Évolution de l'épargne</h2>
+        <section id="graphique-epargne" class="patrimoine"></section>
+        <h2>📊 Dépenses sur 6 mois</h2>
+        <section id="graphique-mois" class="patrimoine"></section>
+        <section id="carte-bilan" class="patrimoine"></section>
+      </div>
+
+      <div id="onglet-comptes" class="onglet-accueil" hidden>
+        <h2>💳 Mes comptes</h2>
+        <section id="liste-comptes"></section>
+        <details class="repliable details-badges">
+          <summary>🏅 Séries et badges</summary>
+          <section id="carte-series" class="patrimoine"></section>
+          <section id="liste-badges" class="badges"></section>
+        </details>
+      </div>
     </section>
 
     <section id="vue-perso" class="vue" hidden>
@@ -415,6 +428,10 @@
     <div id="creation-objectif" class="saisie" hidden>
       <input id="creation-objectif-nom" type="text" maxlength="40" placeholder="Nom (ex : Voyage, Nouvel écran)">
       <input id="creation-objectif-cible" type="text" inputmode="decimal" placeholder="Montant à atteindre (ex : 800)">
+    </div>
+    <div id="creation-valo" class="saisie" hidden>
+      <p id="creation-valo-nom" class="mu"></p>
+      <input id="creation-valo-valeur" type="text" inputmode="decimal" placeholder="Nouvelle valeur en € (ex : 11000)">
     </div>
     <div class="saisie">
       <button id="creation-valider" type="button">Créer</button>

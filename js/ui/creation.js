@@ -1,15 +1,19 @@
-// Petite fenêtre « Nouveau budget / plan d'épargne / objectif », ouverte depuis les onglets.
+// Petite fenêtre « Nouveau budget / plan d'épargne / objectif » et « Mettre à jour la valeur », ouverte depuis les onglets.
 
-import { comptesActifs, estPlacement } from "../noyau/comptes.js";
+import { comptesActifs, estPlacement, valeurEstimee } from "../noyau/comptes.js";
 import { etat } from "../noyau/etat.js";
-import { echapper } from "../noyau/outils.js";
+import { centimesVersEuros, echapper } from "../noyau/outils.js";
 import { ajouterBudget } from "./budgets.js";
 import { ajouterObjectif, ajouterPlan } from "./epargne.js";
 import { montrerNotif } from "./notifications.js";
+import { ajouterValorisation } from "./placements.js";
 
-const TITRES = { budget: "Nouveau budget", plan: "Nouveau plan d'épargne", objectif: "Nouvel objectif d'achat" };
-let genre = null;  // "budget", "plan" ou "objectif"
-let detail = "";   // portée du budget (perso/commun) ou type de compte du plan (livret/placement)
+const TITRES = {
+  budget: "Nouveau budget", plan: "Nouveau plan d'épargne",
+  objectif: "Nouvel objectif d'achat", valo: "Mettre à jour la valeur"
+};
+let genre = null;  // "budget", "plan", "objectif" ou "valo"
+let detail = "";   // portée du budget, type de compte du plan, ou identifiant du placement (valo)
 
 // Catégories de dépense de la portée qui n'ont pas encore de budget
 export function remplirCategoriesBudget() {
@@ -35,7 +39,8 @@ function ouvrir(demande) {
   detail = morceaux[1] || "";
   document.getElementById("creation-titre").textContent = TITRES[genre];
   for (const g of Object.keys(TITRES)) document.getElementById("creation-" + g).hidden = (g !== genre);
-  for (const id of ["creation-budget-montant", "creation-plan-montant", "creation-objectif-nom", "creation-objectif-cible"]) {
+  for (const id of ["creation-budget-montant", "creation-plan-montant", "creation-objectif-nom",
+                    "creation-objectif-cible", "creation-valo-valeur"]) {
     document.getElementById(id).value = "";
   }
   document.getElementById("creation-message").textContent = "";
@@ -44,6 +49,12 @@ function ouvrir(demande) {
     remplirCategoriesBudget();
   }
   if (genre === "plan") remplirComptesPlan();
+  if (genre === "valo") {
+    const compte = etat.comptes.find(c => c.id === detail);
+    if (!compte) return;
+    document.getElementById("creation-valo-nom").textContent =
+      compte.nom + " · valeur actuelle : " + centimesVersEuros(valeurEstimee(compte));
+  }
   document.getElementById("panneau-creation").hidden = false;
 }
 
@@ -62,6 +73,8 @@ function valider() {
     r = ajouterPlan(
       document.getElementById("creation-plan-compte").value,
       document.getElementById("creation-plan-montant").value);
+  } else if (genre === "valo") {
+    r = ajouterValorisation(detail, document.getElementById("creation-valo-valeur").value);
   } else {
     r = ajouterObjectif(
       document.getElementById("creation-objectif-nom").value,

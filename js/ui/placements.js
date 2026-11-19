@@ -35,28 +35,28 @@ export function afficherBandeauPlacements() {
       ${ligneMontant("Total versé", verse)}
     </div>`;
 }
-function enregistrerValorisation() {
-  const compteId = document.getElementById("valo-compte").value;
-  const valeur = eurosVersCentimes(document.getElementById("valo-valeur").value);
-  const message = document.getElementById("message-valo");
-  if (!compteId) {
-    message.textContent = "Crée d'abord un PEA ou une assurance vie";
-    return;
-  }
-  if (isNaN(valeur) || valeur < 0) {
-    message.textContent = "Valeur invalide";
-    return;
-  }
-  message.textContent = "";
+// Enregistre la valeur actuelle d'un placement. Renvoie { ok, message } : sert au bloc du bas et à la fenêtre de l'onglet.
+export function ajouterValorisation(compteId, texteValeur) {
+  const valeur = eurosVersCentimes(texteValeur);
+  if (!compteId) return { ok: false, message: "Crée d'abord un PEA ou une assurance vie" };
+  if (isNaN(valeur) || valeur < 0) return { ok: false, message: "Valeur invalide" };
   etat.valorisations.push({
     ...nouvelEnregistrement("p"),
     compteId: compteId,
     date: new Date().toLocaleDateString("sv-SE"),
     valeur: valeur
   });
-  document.getElementById("valo-valeur").value = "";
   sauvegarder();
   rafraichir();
+  return { ok: true, message: "Valeur enregistrée" };
+}
+
+function enregistrerValorisation() {
+  const r = ajouterValorisation(
+    document.getElementById("valo-compte").value,
+    document.getElementById("valo-valeur").value);
+  document.getElementById("message-valo").textContent = r.message;
+  if (r.ok) document.getElementById("valo-valeur").value = "";
 }
 
 // Versé net sur un compte à une date donnée (incluse)
