@@ -6,6 +6,7 @@ import { joursRestants, moisCourant } from "../noyau/dates.js";
 import { etat, sauvegarder } from "../noyau/etat.js";
 import { centimesVersEuros, echapper } from "../noyau/outils.js";
 import { calculerPrevision } from "../noyau/prevision.js";
+import { calculerSolde, comptesActifs, porteeDuCompte } from "../noyau/comptes.js";
 import { rafraichir } from "../rendu.js";
 
 const CIRCONFERENCE = 2 * Math.PI * 40;
@@ -48,6 +49,18 @@ function contenuPanneau(p, portee) {
   const d = p.detail;
   let h = `<h2>${portee === "commun" ? "Compte commun" : "Mes comptes perso"}</h2>`;
   h += ligneD("Solde aujourd'hui", centimesVersEuros(p.solde));
+  // Comptes courants de cette portée : on peut en écarter un du calcul, durablement
+  const comptes = comptesActifs().filter(c => c.type === "courant" && porteeDuCompte(c.id) === portee);
+  if (comptes.length > 1 || comptes.some(c => c.horsPrevision)) {
+    h += titreSection("Comptes pris en compte");
+    for (const c of comptes) {
+      const hors = Boolean(c.horsPrevision);
+      h += `<div class="ligne${hors ? " exclu" : ""}"><span class="txt">${echapper(c.nom)}</span>`
+        + `<span><span class="txt">${centimesVersEuros(calculerSolde(c.id))}</span>`
+        + `<button type="button" class="lien-action" data-compte-prev="${echapper(c.id)}">${hors ? "Reprendre" : "Écarter"}</button></span></div>`;
+    }
+    h += `<div class="mu">« Écarter » retire ce compte de la prévision tant que tu ne le reprends pas (le compte n'est pas supprimé).</div>`;
+  }
   if (d.revenus.length > 0) {
     h += titreSection("+ Revenus à venir");
     for (const r of d.revenus) h += ligneD(nomEtIcone(r.categorie), centimesVersEuros(r.montant), r.cle, r.exclu);
@@ -89,6 +102,14 @@ function basculerExclusion(cle) {
   sauvegarder();
 }
 
+// Écarte (ou reprend) un compte dans les prévisions, sans limite de durée
+function basculerCompte(id) {
+  const c = etat.comptes.find(x => x.id === id);
+  if (!c) return;
+  if (c.horsPrevision) delete c.horsPrevision;
+  else c.horsPrevision = true;
+  sauvegarder();
+}
 // ===== Cartes =====
 
 function dessinerPrevision(portee, idZone, vide) {
@@ -178,10 +199,19 @@ export function initPrevision() {
       if (cible) ouvrir(cible.dataset.prev);
     });
   }
-  // ✕ / ↺ : on enregistre, on redessine les cartes, puis on réaffiche la fenêtre à jour
+  // ✕ / ↺ (une ligne, ce mois) et Écarter / Reprendre (un compte, durablement) :
+  // on enregistre, on redessine les cartes, puis on réaffiche la fenêtre à jour
   document.getElementById("contenu-prevision").addEventListener("click", (e) => {
+    if (!porteeOuverte) return;
+    const compte = e.target.closest("[data-compte-prev]");
+    if (compte) {
+      basculerCompte(compte.dataset.comptePrev);
+      rafraichir();
+      ouvrir(porteeOuverte);
+      return;
+    }
     const bouton = e.target.closest("[data-excl]");
-    if (!bouton || !porteeOuverte) return;
+    if (!bouton) return;
     basculerExclusion(bouton.dataset.excl);
     rafraichir();
     ouvrir(porteeOuverte);

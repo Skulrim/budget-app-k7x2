@@ -507,3 +507,5 @@ html:has(.panneau:not([hidden])), body:has(.panneau:not([hidden])) { overflow: h
   margin-left: 6px; padding: 0 6px; border-radius: 10px; font-size: 12px;
   background: var(--alerte); color: var(--texte-sur-accent);
 }
+/* ===== Prévision : bouton Écarter / Reprendre d'un compte ===== */
+#contenu-prevision .lien-action { margin-left: 8px; padding: 4px 10px; }

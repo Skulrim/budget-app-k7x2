@@ -24,7 +24,9 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
   const mois = dateDuJour.slice(0, 7);
   const exclusions = new Set((etat.exclusions || [])
     .filter(x => x.mois === mois).map(x => x.cle));
-  const dansLePerimetre = c => c.type === "courant" && porteeDuCompte(c.id) === portee;
+  const estDeLaPortee = c => c.type === "courant" && porteeDuCompte(c.id) === portee;
+  // NOUVEAU : un compte écarté (horsPrevision) sort du calcul sans être supprimé
+  const dansLePerimetre = c => estDeLaPortee(c) && !c.horsPrevision;
   const solde = totalPar(dansLePerimetre);
   let revenus = 0, depenses = 0, virements = 0;
   const recParCategorie = {};
@@ -96,7 +98,8 @@ export function calculerPrevision(portee, dateDuJour = aujourdhui()) {
     fin: mois + "-" + String(dernierJourDuMois(mois)).padStart(2, "0"),
     solde: solde, revenus: revenus, depenses: depenses, virements: virements, budgets: budgets,
     prevu: solde + revenus - depenses + virements - budgets,
-    aDesComptes: comptesActifs().some(dansLePerimetre),
+    // NOUVEAU : même si tous les comptes sont écartés, la carte reste ouvrable pour les reprendre
+    aDesComptes: comptesActifs().some(estDeLaPortee),
     detail: detail
   };
 }

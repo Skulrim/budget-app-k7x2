@@ -15,7 +15,6 @@ export function remplirChoixComptes() {
       choix.innerHTML += `<option value="${compte.id}">${echapper(compte.nom)}</option>`;
     }
   }
-  remplirChoixPlacements();
   remplirChoixPlan();
   remplirChoixRecurrence();
   remplirChoixAjustement();
@@ -28,14 +27,6 @@ export function remplirChoixAjustement() {
   choix.innerHTML = comptesActifs().filter(c => !estPlacement(c))
     .map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join("");
   if (memoire) choix.value = memoire;
-}
-
-function remplirChoixPlacements() {
-  const choix = document.getElementById("valo-compte");
-  choix.innerHTML = "";
-  for (const compte of comptesActifs().filter(estPlacement)) {
-    choix.innerHTML += `<option value="${compte.id}">${echapper(compte.nom)}</option>`;
-  }
 }
 
 export function remplirChoixCategories() {

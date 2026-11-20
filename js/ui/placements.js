@@ -51,14 +51,6 @@ export function ajouterValorisation(compteId, texteValeur) {
   return { ok: true, message: "Valeur enregistrée" };
 }
 
-function enregistrerValorisation() {
-  const r = ajouterValorisation(
-    document.getElementById("valo-compte").value,
-    document.getElementById("valo-valeur").value);
-  document.getElementById("message-valo").textContent = r.message;
-  if (r.ok) document.getElementById("valo-valeur").value = "";
-}
-
 // Versé net sur un compte à une date donnée (incluse)
 function verseAu(compte, date) {
   let total = compte.verseDepart || 0;
@@ -166,7 +158,6 @@ export function afficherValorisations() {
 
 // Branche les écouteurs d'événements de ce module (appelé une fois par main.js)
 export function initPlacements() {
-  document.getElementById("bouton-valo").addEventListener("click", enregistrerValorisation);
   document.getElementById("liste-valorisations").addEventListener("click", (e) => {
     const id = e.target.dataset.id;
     if (!id) return;

@@ -26,12 +26,25 @@ const VUES = ["accueil", "perso", "commun", "livrets", "placements", "reglages",
 
 let vuePrecedente = "accueil";
 
+// Une vue à pastilles (Accueil, Livrets, Placements) revient sur sa première pastille quand on la quitte
+function reinitialiserPastilles(vue) {
+  const boutons = vue.querySelectorAll(".pastilles button");
+  if (boutons.length === 0) return;
+  const premier = boutons[0].dataset.onglet;
+  for (const o of vue.querySelectorAll(".onglet-accueil")) {
+    o.hidden = (o.id !== "onglet-" + premier);
+  }
+  boutons.forEach((b, i) => b.classList.toggle("actif", i === 0));
+}
+
 export function afficherVue(nom) {
   if (nom !== "reglages" && nom !== "mouvements") vuePrecedente = nom;
   for (const v of VUES) {
-    document.getElementById("vue-" + v).hidden = (v !== nom);
+    const section = document.getElementById("vue-" + v);
+    if (v !== nom && !section.hidden) reinitialiserPastilles(section); // la vue qu'on quitte
+    section.hidden = (v !== nom);
   }
-    if (nom !== "reglages") {
+  if (nom !== "reglages") {
     for (const d of document.querySelectorAll("#vue-reglages details")) d.open = false;
   }
   const actif = nom === "mouvements" ? vuePrecedente : nom;

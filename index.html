@@ -91,54 +91,68 @@
 
     <section id="vue-livrets" class="vue" hidden>
       <section id="carte-livrets" class="patrimoine"></section>
-      <h2>Livrets</h2>
-      <section id="liste-livrets"></section>
-      <h2>Épargne du mois</h2>
-<section id="liste-plans-livrets"></section>
-      <h2>Matelas de sécurité</h2>
-<div class="saisie">
-  <select id="choix-mois-matelas">
-    <option value="3">Objectif : 3 mois de dépenses</option>
-    <option value="4">Objectif : 4 mois de dépenses</option>
-    <option value="5">Objectif : 5 mois de dépenses</option>
-    <option value="6">Objectif : 6 mois de dépenses</option>
-  </select>
-</div>
-<section id="carte-matelas" class="patrimoine"></section>
-<h2>Objectifs d'achat</h2>
-<section id="liste-objectifs"></section>
-<p id="controle-objectifs"></p>
-<div id="bloc-mises">
-<div class="saisie">
-  <select id="objectif-choix"></select>
-  <input id="objectif-ajout" type="text" inputmode="decimal" placeholder="Montant (ex : 50)">
-  <button id="bouton-objectif-ajout" type="button">Mettre de côté</button>
-  <button id="bouton-objectif-retrait" type="button">Retirer de l'objectif</button>
-  <p id="message-objectif-ajout"></p>
-</div>
-<h2>Dernières mises de côté</h2>
-<section id="liste-mises"></section>
-</div>
 
+      <div class="pastilles">
+        <button type="button" data-onglet="livrets-liste" class="actif">Livrets</button>
+        <button type="button" data-onglet="livrets-objectifs">Objectifs</button>
+      </div>
+
+      <div id="onglet-livrets-liste" class="onglet-accueil">
+        <h2>Livrets</h2>
+        <section id="liste-livrets"></section>
+        <h2>Épargne du mois</h2>
+        <section id="liste-plans-livrets"></section>
+      </div>
+
+      <div id="onglet-livrets-objectifs" class="onglet-accueil" hidden>
+        <h2>Matelas de sécurité</h2>
+        <div class="saisie">
+          <select id="choix-mois-matelas">
+            <option value="3">Objectif : 3 mois de dépenses</option>
+            <option value="4">Objectif : 4 mois de dépenses</option>
+            <option value="5">Objectif : 5 mois de dépenses</option>
+            <option value="6">Objectif : 6 mois de dépenses</option>
+          </select>
+        </div>
+        <section id="carte-matelas" class="patrimoine"></section>
+        <h2>Objectifs d'achat</h2>
+        <section id="liste-objectifs"></section>
+        <p id="controle-objectifs"></p>
+        <div id="bloc-mises">
+          <div class="saisie">
+            <select id="objectif-choix"></select>
+            <input id="objectif-ajout" type="text" inputmode="decimal" placeholder="Montant (ex : 50)">
+            <button id="bouton-objectif-ajout" type="button">Mettre de côté</button>
+            <button id="bouton-objectif-retrait" type="button">Retirer de l'objectif</button>
+            <p id="message-objectif-ajout"></p>
+          </div>
+          <h2>Dernières mises de côté</h2>
+          <section id="liste-mises"></section>
+        </div>
+      </div>
     </section>
 
     <section id="vue-placements" class="vue" hidden>
       <section id="carte-placements" class="patrimoine"></section>
-      <h2>Évolution des valeurs</h2>
-      <section id="courbes-placements"></section>
-      <h2>PEA et assurance vie</h2>
-      <section id="liste-placements"></section>
-      <h2>Versements du mois</h2>
-<section id="liste-plans-placements"></section>
-      <h2>Mettre à jour un placement</h2>
-      <div class="saisie">
-        <select id="valo-compte"></select>
-        <input id="valo-valeur" type="text" inputmode="decimal" placeholder="Valeur actuelle en € (ex : 11000)">
-        <button id="bouton-valo" type="button">Enregistrer la valeur</button>
-        <p id="message-valo"></p>
+
+      <div class="pastilles">
+        <button type="button" data-onglet="placements-valeurs" class="actif">Valeurs</button>
+        <button type="button" data-onglet="placements-evolution">Évolution</button>
       </div>
-      <h2>Historique des valorisations</h2>
-      <section id="liste-valorisations"></section>
+
+      <div id="onglet-placements-valeurs" class="onglet-accueil">
+        <h2>PEA et assurance vie</h2>
+        <section id="liste-placements"></section>
+        <h2>Versements du mois</h2>
+        <section id="liste-plans-placements"></section>
+      </div>
+
+      <div id="onglet-placements-evolution" class="onglet-accueil" hidden>
+        <h2>Évolution des valeurs</h2>
+        <section id="courbes-placements"></section>
+        <h2>Historique des valorisations</h2>
+        <section id="liste-valorisations"></section>
+      </div>
     </section>
 
 <section id="vue-mouvements" class="vue" hidden>
